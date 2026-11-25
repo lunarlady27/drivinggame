@@ -1,0 +1,14 @@
+HP_I18N.add({ exact: {
+  '한판 HANPAN — 오리지널 게임 플랫폼': 'HANPAN — Original Games', '한판': '',
+  '한 판만 더! 직접 만든 오리지널 게임 7개 — 골라서 바로 플레이하세요': 'One more round! 7 original games — pick one and play',
+  '한판 드라이브': 'Hanpan Drive', '광주 · 서울 · 대전 · 부산 · 대구 · 인천 실제 지도를 고속도로로 이어 달리는 3D 운전 게임. 실제 노선 시내버스 기사, 승객 승하차, 고속도로, 자율주행, 지하철 관리까지.': '3D driving across real maps of Korean cities linked by expressways. Drive city buses on real routes, carry passengers, ride trains and planes, run the bus network.',
+  '운전': 'Driving', '실제 지도': 'Real maps', '버스': 'Bus', '경영': 'Management', '▶ 플레이': '▶ Play',
+  '코어 브레이커': 'Core Breaker', '5대5 1인칭 전술 슈팅. 요원 4명의 기술, 무기 상점과 경제, 코어 설치 · 해체. 봇과 연습하거나 방 코드로 친구와 함께.': '5v5 first-person tactical shooter. 4 agents with abilities, a weapon shop and economy, plant and defuse the core against bots.', '5대5 1인칭 전술 슈팅. 요원 4명의 기술, 무기 상점과 경제, 코어 설치 · 해체. 봇과 실전 연습.': '5v5 first-person tactical shooter. 4 agents with abilities, a weapon shop and economy, plant and defuse the core against bots.',
+  '5대5': '5v5', '멀티': 'Bots', '태블릿': 'Tablet', '팝 아레나': 'Pop Arena', '위에서 내려다보는 3대3 난투. 영웅 6명, 젬 쟁탈 · 녹아웃 모드, 수풀 매복과 필살기.': 'Top-down 3v3 brawler. 6 heroes, Gem Rush and Knockout modes, bush ambushes and supers.',
+  '탑뷰': 'Top-down', '3대3': '3v3', '터치': 'Touch', '큐브랜드': 'Cubeland', '블록을 캐고 쌓아 나만의 세계를 짓는 샌드박스. 평원 · 사막 · 설원, 동굴, 낮과 밤, 세계 저장.': 'Mine and build your own block world. Plains, deserts, snow, caves, day and night, saved worlds.',
+  '샌드박스': 'Sandbox', '건축': 'Build', '탐험': 'Explore', '저장': 'Saves', '라스트 아일랜드': 'Last Island', '비행기에서 뛰어내려 섬에서 무기를 줍고 줄어드는 자기장 안에서 끝까지 살아남는 배틀로얄.': 'Jump from the plane, loot the island and be the last one standing inside the shrinking zone.',
+  '배틀로얄': 'Battle royale', '생존': 'Survival', '봇': 'Bots', '듀얼 스트라이크': 'Duel Strike', '1대1 대전 격투. 캐릭터 4명, 필살기 · 초필살 · 콤보 · 잡기. 컴퓨터, 한 키보드 둘이서, 온라인 방.': '1v1 fighting game. 4 fighters, specials, supers, combos and throws. Versus CPU or two players on one keyboard.', '1대1 대전 격투. 캐릭터 4명, 필살기 · 초필살 · 콤보 · 잡기. 컴퓨터 또는 한 키보드 둘이서.': '1v1 fighting game. 4 fighters, specials, supers, combos and throws. Versus CPU or two players on one keyboard.',
+  '격투': 'Fighting', '1대1': '1v1', '신작': 'New', '한판 미니': 'HANPAN Mini', '가볍게 한 판! 블록 채우기 · 숫자 합치기 · 비트 탭(리듬) · 도시 질주(러너) · 성벽 수비(디펜스) 5종.': '5 quick games: block puzzle, number merge, rhythm tap, city runner and tower defense.',
+  '퍼즐': 'Puzzle', '리듬': 'Rhythm', '러너': 'Runner', '디펜스': 'Defense',
+  '게임 이름 · 캐릭터 · 그림 · 음악은 모두 이곳에서 새로 만든 오리지널이에요. 온라인 대전은 이 페이지들을 공유받아 로그인한 사람끼리 됩니다.': 'All game names, characters, art and music are original. Map data © OpenStreetMap contributors.', '게임 이름 · 캐릭터 · 그림 · 음악은 모두 이곳에서 새로 만든 오리지널이에요. 지도 © OpenStreetMap contributors.': 'All game names, characters, art and music are original. Map data © OpenStreetMap contributors.',
+}, patterns: [], words: {} });

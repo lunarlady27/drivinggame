@@ -1,0 +1,21 @@
+window.HP_I18N && HP_I18N.add({
+  exact: {
+    '팝 아레나 — 3대3 난투': 'Pop Arena — 3v3 Brawl', '팝 아레나 · 3대3 난투 · 한판 HANPAN': 'Pop Arena · 3v3 Brawl',
+    '볼트': 'Volt', '균형형': 'All-rounder', '번개 돌진': 'Lightning Dash', '세 발 연사, 필살기로 적을 뚫고 돌진': 'Fires 3-shot bursts; super dashes right through enemies',
+    '펑키': 'Punky', '근접 산탄': 'Close-range spread', '점프 강타': 'Leap Smash', '가까울수록 강한 산탄, 필살기로 뛰어올라 내려찍기': 'Spread shot that hits harder up close; super leaps in and slams down',
+    '모모': 'Momo', '저격': 'Sniper', '관통 대포': 'Piercing Cannon', '멀리서 한 방, 필살기는 벽까지 뚫는 대포': 'One big long-range shot; super is a cannon that pierces walls',
+    '두두': 'Dudu', '탱커': 'Tank', '회오리': 'Whirlwind', '튼튼한 주먹, 필살기는 빙글빙글 회오리': 'Tough punches; super is a spinning whirlwind',
+    '루미': 'Lumi', '투척': 'Thrower', '거대 폭탄': 'Mega Bomb', '벽 너머로 폭탄 던지기, 필살기는 거대 폭탄': 'Lobs bombs over walls; super is a giant bomb',
+    '솜': 'Som', '지원': 'Support', '치유의 꽃밭': 'Healing Garden', '적은 때리고 아군은 고치는 구슬, 필살기로 치유 꽃밭': 'Orbs that hurt enemies and heal allies; super plants a healing garden',
+    '젬 러시': 'Gem Rush', '가운데에서 나오는 젬 10개를 모아 15초 버티면 승리': 'Collect 10 gems from the center and hold them for 15 seconds to win',
+    '녹아웃 난투': 'Knockout Brawl', '먼저 10번 쓰러뜨리거나 시간 끝에 더 많이 쓰러뜨린 팀 승리': 'First team to 10 knockouts — or with the most when time runs out — wins',
+    '콩콩': 'Bean', '뭉치': 'Fluff', '보리': 'Barley', '두부': 'Tofu', '호두': 'Walnut', '쿠키': 'Cookie', '모찌': 'Mochi', '자두': 'Plum', '꿀벌': 'Bee', '단추': 'Button', '코코': 'Coco', '감자': 'Potato',
+    '🔵 블루': '🔵 Blue', '블루로': 'Join Blue', '🔴 레드': '🔴 Red', '레드로': 'Join Red', '(방장이 정해요)': '(host decides)', '승리까지': 'to win',
+    '방장이 다시 시작하면 들어가요': "You'll join when the host restarts", '봇 실력': 'Bot skill', '▶ 봇과 플레이': '▶ Play with bots',
+    '조작: WASD 이동 · 마우스로 조준 · 왼쪽 클릭 공격 · 오른쪽 클릭/Space 필살기 · F 자동 조준 · Esc 멈춤 | 태블릿: 왼쪽 끌기 이동, 오른쪽 끌어서 조준 후 놓으면 공격(톡 치면 자동 조준), ⚡ 버튼 필살기': 'Controls: WASD move · aim with mouse · left click attack · right click/Space super · F auto-aim · Esc pause | Tablet: drag left to move, drag right to aim and release to attack (tap = auto-aim), ⚡ button = super',
+    'WASD 이동 · 클릭 공격 · 우클릭/Space 필살기 · F 자동 조준 · 덤불에 숨으면 적에게 안 보여요': 'WASD move · click attack · right click/Space super · F auto-aim · Hide in bushes to vanish from enemies',
+    '💎 우리': '💎 Us', '💎 상대': '💎 Enemy', '우리': 'Us', '상대': 'Enemy', '블루 승리!': 'Blue wins!', '레드 승리!': 'Red wins!', '블루': 'Blue', '레드': 'Red', '젬': 'Gems', '필살기 준비!': 'Super ready!', '쓰러졌어요': 'Knocked out', '부활까지': 'Respawn in',
+  },
+  patterns: [['^필살기: (.+)$', 'Super: $1'], ['^(\\d+)명 · 모드: (.+)$', '$1 players · Mode: $2'], ['^캐릭터는 메인 메뉴에서 고른 걸로 해요 \\(지금: (.+)\\)$', 'You play the hero picked in the main menu (now: $1)'], ['^승리까지 (\\d+)초$', '$1s to win'], ['^(\\d+)초 뒤 부활$', 'Respawn in $1s']],
+  words: { '젬': 'Gems', '블루': 'Blue', '레드': 'Red', '승리': 'wins', '필살기': 'Super' },
+});

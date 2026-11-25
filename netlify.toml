@@ -1,0 +1,10 @@
+# Netlify: 미리 만든 웹 결과물(site/)을 그대로 올림 — 빌드 명령 없음
+# site/ 다시 만들기:  python3 build.py  →  dist/itch 를 site/ 로 복사
+[build]
+  publish = "site"
+  command = ""
+
+[[headers]]
+  for = "/*/js/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

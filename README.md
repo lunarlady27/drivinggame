@@ -15,6 +15,10 @@ Three.js 로 만들었고 브라우저에서 바로 실행됩니다.
 | `tools/` | 빌드 도구 (file:// 에서도 열리는 한 파일 번들) |
 | `build.py` | itch.io · CrazyGames · 웹 · 안드로이드용 결과물을 `dist/` 에 만듦 |
 
+## 웹사이트 (Netlify)
+
+`site/` 폴더가 바로 올릴 수 있는 완성본이고, `netlify.toml` 이 그 폴더를 게시하도록 설정돼 있습니다. 첫 화면은 7개 게임을 고르는 포털, 한판 드라이브는 `/hanpandrive/` 입니다.
+
 ## 실행
 
 ```bash
