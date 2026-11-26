@@ -77,13 +77,17 @@ export class CamView {
     void o;
   }
   // 메인 화면을 그린 뒤 호출: 두 칸을 같은 캔버스에 덧그려요
-  render(scene) {
+  render(scene, lite = false) {
     if (!this.on || !this.box) return;
+    this.n = (this.n || 0) + 1;
     const r = this.r, H = innerHeight;
     const prevAuto = r.autoClear;
     r.autoClear = false;
     r.setScissorTest(true);
-    for (const [cam, b] of [[this.top, this.box.top], [this.rear, this.box.rear]]) {
+    // 가벼운 모드: 위에서 본 화면은 빼고 후방 카메라만
+    const list = lite ? [[this.rear, this.box.rear]] : [[this.top, this.box.top], [this.rear, this.box.rear]];
+    if (lite && this.el) this.el.classList.add('lite');
+    for (const [cam, b] of list) {
       const yGL = H - b.y - b.h;
       r.setViewport(b.x, yGL, b.w, b.h); r.setScissor(b.x, yGL, b.w, b.h);
       r.clear(true, true, false);

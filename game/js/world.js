@@ -1099,6 +1099,7 @@ function boxOnRoad(cx, cz, hx, hz, ang) {
   }
   return false;
 }
+let LITE_W = false; // 태블릿 가벼운 모드: 작은 집 일부 생략
 const hrand = (i, k) => { const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
 function prepOsmBuildings(scene, zoneOf, mats, aptColors, shopColors) {
   BG.scene = scene; BG.mats = [mats.shop, mats.apt, mats.office, mats.factory, mats.roof]; BG.cells = []; BG.cur = null; BG.done = 0;
@@ -1116,6 +1117,7 @@ function prepOsmBuildings(scene, zoneOf, mats, aptColors, shopColors) {
     }
     cx /= n; cz /= n;
     const area = Math.abs(ar) / 2;
+    if (LITE_W && area < 140 && b[0] <= 8 && hrand(i, 4) < 0.6) continue;
     const ci = Math.floor((cx - OG.x0) / OG.cell), cj = Math.floor((cz - OG.z0) / OG.cell);
     const ov = ci >= 0 && cj >= 0 && ci < OG.nx && cj < OG.nz ? OG.a[cj * OG.nx + ci] : 0;
     if (ov === 1 || ov === 2 || ov === 3 || ov === 5) continue; // 도로·물·랜드마크 자리와 겹치면 건너뜀
@@ -1442,6 +1444,7 @@ export async function buildWorld(scene, progress = () => {}, opts = {}) {
   mats.busText = new THREE.MeshStandardMaterial({ map: T.busText, transparent: true, alphaTest: 0.4, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
   mats.bump = new THREE.MeshStandardMaterial({ map: T.bump, roughness: 0.7 });
 
+  LITE_W = !!opts.lite;
   TILE = opts.quality === 'high' ? 400 : opts.quality === 'medium' ? 800 : 800; INST_CELL = opts.quality === 'high' ? 600 : opts.quality === 'medium' ? 1200 : 1200;
   let tris = new Tris(TILE);
   let stat = new Merger({ tile: TILE });

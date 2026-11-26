@@ -930,3 +930,4 @@ body:not([data-state="play"]) #hanpanHome { left: 16px !important; right: auto !
 .t2-brand small { display: block; margin-top: 2px; font-size: 12px; letter-spacing: 3px; color: rgba(190,225,240,.7); }
 @media (max-width: 1150px) { .t2-brand { top: auto; bottom: 96px; left: auto; right: 24px; transform: none; text-align: right; } .t2-brand b { font-size: 22px; letter-spacing: 4px; } }
 @media (max-width: 900px), (max-height: 520px) { .t2-brand { display: none; } }
+#camview.lite .cv-top { display: none; }

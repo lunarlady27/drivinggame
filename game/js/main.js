@@ -44,10 +44,11 @@ for (const C of [Array, String]) if (!C.prototype.at) Object.defineProperty(C.pr
 const $ = (s) => document.querySelector(s);
 load();
 // 처음 실행(또는 이 버전 처음): 기기에 맞게 그래픽 품질 자동 선택 — 휴대폰·태블릿은 '낮음'
-if (S.settings.qv !== 2) {
-  S.settings.qv = 2;
+if (S.settings.qv !== 3) {
+  S.settings.qv = 3;
   const mobile = isTouch || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
   S.settings.quality = mobile || (navigator.hardwareConcurrency || 8) <= 4 ? 'low' : 'medium';
+  if (mobile) { S.settings.traffic = 'low'; S.settings.fx = false; S.settings.sharp = false; } // 태블릿: 가볍게 시작
   try { save(); } catch (e) { /* 저장 실패해도 계속 */ }
 }
 // 지난번에 시작하다가 튕겼으면(태블릿 메모리 부족 등) 이번엔 가볍게: 그래픽 '낮음' · 거울 · 효과 끔 · 차 적게
@@ -66,11 +67,13 @@ try {
 const bootOk = () => { try { localStorage.removeItem('rk_boot'); } catch (e) { /* 무시 */ } };
 addEventListener('pagehide', bootOk);
 const Q = S.settings.quality;
-const QF = Q === 'high' ? 1 : Q === 'medium' ? 0.8 : 0.55; // 보이는 거리 비율
+// 태블릿 · 폰 + 낮음: 더 가볍게 (화면 해상도 1배 · 보이는 거리 짧게 · 거울 · 카메라 덜 자주)
+const LITE = Q === 'low' && (isTouch || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent));
+const QF = Q === 'high' ? 1 : Q === 'medium' ? 0.8 : LITE ? 0.42 : 0.55; // 보이는 거리 비율
 
 // ===================== 렌더러 =====================
 const renderer = new THREE.WebGLRenderer({ antialias: Q !== 'low', powerPreference: 'high-performance', stencil: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, S.settings.sharp ? 2 : Q === 'high' ? 1.6 : Q === 'medium' ? 1.35 : 1.15)); // 앞 화면이 흐리지 않게 (예전보다 선명하게)
+renderer.setPixelRatio(Math.min(devicePixelRatio, S.settings.sharp ? 2 : Q === 'high' ? 1.6 : Q === 'medium' ? 1.35 : LITE ? 1 : 1.15)); // 앞 화면이 흐리지 않게 (예전보다 선명하게)
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -78,6 +81,16 @@ renderer.shadowMap.enabled = Q !== 'low';
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.shadowMap.autoUpdate = false;
 $('#game').appendChild(renderer.domElement);
+// 그래픽 메모리가 모자라 화면이 하얗게 사라지면(태블릿) → 더 가벼운 설정으로 저장하고 자동 새로고침
+renderer.domElement.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  try { S.settings.quality = 'low'; S.settings.traffic = 'low'; S.settings.peds = false; S.settings.mirrors = false; S.settings.fx = false; save(); } catch (er) { /* 무시 */ }
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#0b0f14;color:#fff;font:700 20px sans-serif;text-align:center';
+  d.innerHTML = '🔧 그래픽 메모리가 부족해서<br>더 가볍게 바꿔 다시 시작해요…';
+  document.body.appendChild(d);
+  setTimeout(() => location.reload(), 1500);
+}, false);
 // 차량 반사용 환경맵
 {
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -88,7 +101,7 @@ const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 36
 camera.position.set(0, 30, -60);
 
 // 사이드미러 (렌더 타깃 → 화면 위 오버레이)
-const MRW = Q === 'low' ? 240 : 360, MRH = Q === 'low' ? 146 : 220;
+const MRW = LITE ? 200 : Q === 'low' ? 240 : 360, MRH = LITE ? 122 : Q === 'low' ? 146 : 220;
 const mirrorRT = [new THREE.WebGLRenderTarget(MRW, MRH), new THREE.WebGLRenderTarget(MRW, MRH)];
 mirrorRT.forEach((r) => (r.texture.colorSpace = THREE.SRGBColorSpace));
 const mirrorCam = [new THREE.PerspectiveCamera(34, 360 / 220, 0.5, Q === 'low' ? 160 : 400), new THREE.PerspectiveCamera(34, 360 / 220, 0.5, Q === 'low' ? 160 : 400)];
@@ -290,7 +303,7 @@ async function boot() {
     const pill = $('#worldPill');
     const T0 = performance.now(); G.loadProf = [];
     const prog = (p, t) => { G.loadProf.push([Math.round(performance.now() - T0), t, performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : 0]); G.worldP = p; if (pill && app.waiters.length) { pill.classList.remove('hidden'); pill.querySelector('i').style.width = Math.round(p * 100) + '%'; pill.querySelector('span').textContent = '지도 준비 중 ' + Math.round(p * 100) + '%'; } };
-    await buildWorld(scene, prog, { extraRoutes: customRoutesForWorld(), quality: Q });
+    await buildWorld(scene, prog, { extraRoutes: customRoutesForWorld(), quality: Q, lite: LITE });
     prog(0.95, '차들을 도로에 놓는 중...');
     await new Promise((r) => setTimeout(r, 0));
     syncAdminWithWorld();
@@ -1782,7 +1795,7 @@ function render() {
   const cam = CAMS[G.camMode][0];
   const showMirrors = G.state === 'play' && G.mirrorsOn && P && !P.onFoot && (cam === 'driver' || (P.spec.type === 'bus' && cam === 'interior'));
   const busMirrors = P && P.obj.mirrorFaces && G.state !== 'loading' && G.state !== 'menu' && camera.position.distanceTo(P.obj.group.position) < 30;
-  const ME = PERF.slow >= 2 || Q === 'low' ? 4 : 2;
+  const ME = LITE ? 6 : PERF.slow >= 2 || Q === 'low' ? 4 : 2;
   if ((showMirrors || busMirrors) && G.frame % ME === 0) {
     const i = (G.frame / ME) % 2 | 0;
     const o = P.obj, sim = P.sim;
@@ -1802,7 +1815,7 @@ function render() {
   if (camera.view && camera.view.enabled) { camera.clearViewOffset(); camera.updateProjectionMatrix(); }
   if (fxOn()) { if (!post) post = new PostFX(renderer); post.render(scene, camera, env.nightF); } else renderer.render(scene, camera);
   dashOverlay();
-  if (G.state === 'play') camv.render(scene);
+  if (G.state === 'play') camv.render(scene, LITE);
   if (G.shotCb) { const cb = G.shotCb; G.shotCb = null; try { cb(renderer.domElement.toDataURL('image/jpeg', 0.92)); } catch (e) { toast('사진을 찍지 못했어요', 'bad'); } }
   if (showMirrors && !G.photo) {
     if (G.bcaDemo) forceBlindCar(P);
