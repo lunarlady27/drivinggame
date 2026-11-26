@@ -1,6 +1,9 @@
 HP_I18N.add({ exact: {
   '한판 HANPAN — 오리지널 게임 플랫폼': 'HANPAN — Original Games', '한판': '',
   '한 판만 더! 직접 만든 오리지널 게임 7개 — 골라서 바로 플레이하세요': 'One more round! 7 original games — pick one and play',
+  '한 판만 더! 직접 만든 오리지널 게임 8개 — 골라서 바로 플레이하세요': 'One more round! 8 original games — pick one and play',
+  '터보 서킷': 'Turbo Circuit', '3D 카트 레이싱. 드리프트로 모아 쏘는 미니 부스트, 아이템 상자(부스터 · 유도탄 · 방패 · 기름), 트랙 4곳, 그랑프리와 유령 카트 타임 어택.': '3D kart racing. Drift to charge mini-boosts, item boxes (booster, homing missile, shield, oil), 4 tracks, Grand Prix and ghost-kart time attack.',
+  '레이싱': 'Racing', '드리프트': 'Drift', '아이템': 'Items',
   '한판 드라이브': 'Hanpan Drive', '광주 · 서울 · 대전 · 부산 · 대구 · 인천 실제 지도를 고속도로로 이어 달리는 3D 운전 게임. 실제 노선 시내버스 기사, 승객 승하차, 고속도로, 자율주행, 지하철 관리까지.': '3D driving across real maps of Korean cities linked by expressways. Drive city buses on real routes, carry passengers, ride trains and planes, run the bus network.',
   '운전': 'Driving', '실제 지도': 'Real maps', '버스': 'Bus', '경영': 'Management', '▶ 플레이': '▶ Play',
   '코어 브레이커': 'Core Breaker', '5대5 1인칭 전술 슈팅. 요원 4명의 기술, 무기 상점과 경제, 코어 설치 · 해체. 봇과 연습하거나 방 코드로 친구와 함께.': '5v5 first-person tactical shooter. 4 agents with abilities, a weapon shop and economy, plant and defuse the core against bots.', '5대5 1인칭 전술 슈팅. 요원 4명의 기술, 무기 상점과 경제, 코어 설치 · 해체. 봇과 실전 연습.': '5v5 first-person tactical shooter. 4 agents with abilities, a weapon shop and economy, plant and defuse the core against bots.',
