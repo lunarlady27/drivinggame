@@ -68,7 +68,9 @@ export class Showroom {
     }
     this.cars = [];
     this.featSpec = BY_ID.hb_super_low;
-    for (const c of LINEUP) {
+    // 태블릿 · 폰: 주변 전시 차는 3대만 (메모리 절약)
+    const mob = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) || matchMedia('(pointer: coarse)').matches;
+    for (const c of mob ? LINEUP.slice(2, 5) : LINEUP) {
       const spec = BY_ID[c.id]; if (!spec) continue;
       const v = buildVehicle(spec, { color: c.color, wheel: 'sport' });
       const x = Math.sin(c.a) * (c.r + 5), z = -Math.cos(c.a) * (c.r + 5) + 4;

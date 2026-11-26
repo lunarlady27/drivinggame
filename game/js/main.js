@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { streamCorridor, buildCorridorNear } from './corridor.js';
 import { streamRegion, buildRegionNear, updateRegionSignals } from './region.js';
-import { buildWorld, streamBuildings, buildBuildingsNear, W, roadInfoAt, zoneAt, onBump, groundY, levelAt, updateSignals, signalState, queryColliders, blocked, UG, obNearest, linkY, railDist, edgesNear, lanePos , updateLabels } from './world.js';
+import { buildWorld, streamBuildings, pruneBuildings, buildBuildingsNear, W, roadInfoAt, zoneAt, onBump, groundY, levelAt, updateSignals, signalState, queryColliders, blocked, UG, obNearest, linkY, railDist, edgesNear, lanePos , updateLabels } from './world.js';
 import { Train } from './train.js';
 import { buildVehicle, buildPed, animPed, randomPlate, applyEnv, setEnvIntensity, MAT, buildAvatar } from './models.js';
 const MAT_CABIN = MAT.cabinLight;
@@ -1167,7 +1167,7 @@ function frame(now) {
   fpsAcc += rawDt; fpsN++; perfTick(rawDt);
   if (fpsAcc > 0.5) { const f = $('#fps'); f.classList.toggle('hidden', !S.settings.fps); f.textContent = `${(fpsAcc / fpsN * 1000).toFixed(1)} ms (${Math.round(fpsN / fpsAcc)} fps)`; fpsAcc = 0; fpsN = 0; }
   G.frame++;
-  if (app.ready && G.P) { const P = G.P, px = P.onFoot ? P.px : P.sim.x, pz = P.onFoot ? P.pz : P.sim.z; streamBuildings(px, pz, G.state === 'play' ? (Q === 'low' ? 2 : 3) : 9); if (G.state === 'play' && G.frame % 2 === 0) streamCorridor(px, pz); if (G.state === 'play' && G.frame % 2 === 1) streamRegion(px, pz); if (G.state === 'play' && G.frame % 30 === 0) autoRegions(px, pz); }
+  if (app.ready && G.P) { const P = G.P, px = P.onFoot ? P.px : P.sim.x, pz = P.onFoot ? P.pz : P.sim.z; const BR = ULTRA ? 1500 : LITE ? 2200 : Infinity; streamBuildings(px, pz, G.state === 'play' ? (Q === 'low' ? 2 : 3) : 9, BR); if (LITE && G.frame % 120 === 60) pruneBuildings(px, pz, BR + 900); if (G.state === 'play' && G.frame % 2 === 0) streamCorridor(px, pz); if (G.state === 'play' && G.frame % 2 === 1) streamRegion(px, pz); if (G.state === 'play' && G.frame % 30 === 0) autoRegions(px, pz); }
   if (S.infMoney && G.frame % 30 === 0) { if (S.money < 1e15) S.money = 1e15; if (S.admin && S.admin.cash < 1e15) S.admin.cash = 1e15; } // 관리자 돈 무제한
   if (G.state === 'play') updatePlay(dt);
   else if (G.state === 'menu') updateMenu(dt);

@@ -1237,17 +1237,18 @@ function finishCell(c) {
     geo.setAttribute('color', new THREE.Float32BufferAttribute(g.col, 3));
     geo.computeBoundingSphere();
     const m = new THREE.Mesh(geo, BG.mats[mi]); m.castShadow = mi !== 4; m.receiveShadow = true;
-    BG.scene.add(m);
+    m.matrixAutoUpdate = false; m.updateMatrix();
+    BG.scene.add(m); (c.meshes || (c.meshes = [])).push(m);
   }
   c.acc = null; c.done = true; BG.done++;
 }
 // 매 프레임 조금씩: 플레이어(또는 카메라)와 가까운 칸부터. 다 만들었으면 true
-export function streamBuildings(px, pz, budgetMs = 5) {
+export function streamBuildings(px, pz, budgetMs = 5, maxR = Infinity) {
   if (!BG.cells.length || BG.done >= BG.cells.length) return true;
-  const t0 = performance.now();
+  const t0 = performance.now(), mr2 = maxR * maxR;
   while (performance.now() - t0 < budgetMs) {
     if (!BG.cur) {
-      let best = null, bd = Infinity;
+      let best = null, bd = mr2;
       for (const c of BG.cells) { if (c.done) continue; const d = (c.cx - px) ** 2 + (c.cz - pz) ** 2; if (d < bd) { bd = d; best = c; } }
       if (!best) return true;
       BG.cur = best; best.acc = [];
@@ -1266,6 +1267,14 @@ export function buildBuildingsNear(px, pz, r = 1200) {
     if (BG.cur === c) BG.cur = null;
     c.acc = c.acc || []; for (let k = c.pos; k < c.items.length; k += 4) addBuildingGeo(c.acc, c.items[k], c.items[k + 1], c.items[k + 2], c.items[k + 3]);
     c.pos = c.items.length; finishCell(c);
+  }
+}
+// 태블릿 가벼운 모드: 멀리 떨어진 건물 칸은 지워서 메모리를 일정하게 (다시 가까이 가면 다시 지음)
+export function pruneBuildings(px, pz, R) {
+  for (const c of BG.cells) {
+    if (!c.done || !c.meshes || Math.hypot(c.cx - px, c.cz - pz) < R) continue;
+    for (const m of c.meshes) { BG.scene.remove(m); m.geometry.dispose(); }
+    c.meshes = null; c.done = false; c.pos = 0; c.acc = null; BG.done--;
   }
 }
 export const buildingProgress = () => (BG.cells.length ? BG.done / BG.cells.length : 1);
