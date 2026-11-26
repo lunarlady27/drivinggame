@@ -65,15 +65,19 @@ function lightMats(shared) {
 const LOD_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0.25 });
 const PED_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0 });
 const _m4 = new THREE.Matrix4(), _inv = new THREE.Matrix4(), _c = new THREE.Color();
-export function flattenLod(obj, keep = [], skip = []) {
+// 같은 차종 · 같은 색은 합친 모양을 하나만 만들어 같이 씀 (태블릿 메모리 절약)
+const FLAT_CACHE = new Map();
+export function flattenLod(obj, keep = [], skip = [], key = null) {
   const g = obj.group; g.updateMatrixWorld(true);
   _inv.copy(g.matrixWorld).invert();
+  const cached = key && FLAT_CACHE.get(key);
   const geos = [], kill = [];
   g.traverse((o) => {
     if (!o.isMesh || Array.isArray(o.material)) return;
     if (skip.length) for (let a = o; a && a !== g; a = a.parent) if (skip.includes(a)) return;
     const m = o.material;
     if (m.map || keep.includes(m) || (m.transparent && m !== MAT.glass)) return;
+    if (cached) { kill.push(o); return; }
     let geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
     for (const k of Object.keys(geo.attributes)) if (k !== 'position' && k !== 'normal' && k !== 'color') geo.deleteAttribute(k);
     if (!geo.attributes.normal) geo.computeVertexNormals();
@@ -85,9 +89,13 @@ export function flattenLod(obj, keep = [], skip = []) {
     geo.setAttribute('color', new THREE.BufferAttribute(arr, 3));
     geos.push(geo); kill.push(o);
   });
-  if (geos.length < 2) return;
-  const merged = mergeGeometries(geos, false); geos.forEach((x) => x.dispose());
-  if (!merged) return;
+  let merged = cached;
+  if (!merged) {
+    if (geos.length < 2) return;
+    merged = mergeGeometries(geos, false); geos.forEach((x) => x.dispose());
+    if (!merged) return;
+    if (key) FLAT_CACHE.set(key, merged);
+  }
   for (const o of kill) { o.parent.remove(o); if (!Object.values(GEO).includes(o.geometry)) o.geometry.dispose(); }
   const mesh = new THREE.Mesh(merged, LOD_MAT); g.add(mesh);
 }
@@ -734,7 +742,7 @@ export function buildCar(spec, opts = {}) {
   obj.mirrorPos = [new THREE.Vector3(W / 2 + 0.1, myy, mz), new THREE.Vector3(-W / 2 - 0.1, myy, mz)];
   obj.headPos = [new THREE.Vector3(0.5, hy, L / 2), new THREE.Vector3(-0.5, hy, L / 2)];
   group.traverse((o) => { if (o.isMesh && o.material !== MAT.glass) o.castShadow = !lod; });
-  if (lod && !opts.keepParts) flattenLod(obj, [lights.tail, lights.head]);
+  if (lod && !opts.keepParts) flattenLod(obj, [lights.tail, lights.head], [], `${spec.id}|${opts.color || ''}|${opts.wheel || ''}|${opts.taxi ? 't' : ''}${opts.police ? 'p' : ''}${opts.school ? 's' : ''}`);
   return obj;
 }
 

@@ -69,11 +69,12 @@ addEventListener('pagehide', bootOk);
 const Q = S.settings.quality;
 // 태블릿 · 폰 + 낮음: 더 가볍게 (화면 해상도 1배 · 보이는 거리 짧게 · 거울 · 카메라 덜 자주)
 const LITE = Q === 'low' && (isTouch || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent));
-const QF = Q === 'high' ? 1 : Q === 'medium' ? 0.8 : LITE ? 0.42 : 0.55; // 보이는 거리 비율
+let ULTRA = false; try { ULTRA = LITE && sessionStorage.getItem('rk_ultra') === '1'; } catch (e) { /* 무시 */ } // 화면이 한 번 사라졌으면 더 가볍게
+const QF = Q === 'high' ? 1 : Q === 'medium' ? 0.8 : ULTRA ? 0.32 : LITE ? 0.42 : 0.55; // 보이는 거리 비율
 
 // ===================== 렌더러 =====================
 const renderer = new THREE.WebGLRenderer({ antialias: Q !== 'low', powerPreference: 'high-performance', stencil: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, S.settings.sharp ? 2 : Q === 'high' ? 1.6 : Q === 'medium' ? 1.35 : LITE ? 1 : 1.15)); // 앞 화면이 흐리지 않게 (예전보다 선명하게)
+renderer.setPixelRatio(Math.min(devicePixelRatio, S.settings.sharp ? 2 : Q === 'high' ? 1.6 : Q === 'medium' ? 1.35 : ULTRA ? 0.75 : LITE ? 1 : 1.15)); // 앞 화면이 흐리지 않게 (예전보다 선명하게)
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -81,16 +82,25 @@ renderer.shadowMap.enabled = Q !== 'low';
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.shadowMap.autoUpdate = false;
 $('#game').appendChild(renderer.domElement);
-// 그래픽 메모리가 모자라 화면이 하얗게 사라지면(태블릿) → 더 가벼운 설정으로 저장하고 자동 새로고침
+// 그래픽 메모리가 모자라 화면이 하얗게 사라지면(태블릿): 먼저 저절로 돌아오길 4초 기다리고,
+// 안 돌아오면 '초경량'으로 바꿔 새로고침 — 같은 일이 반복되면 무한 새로고침 대신 안내만
+let glLostT = 0;
+const glNote = document.createElement('div');
+glNote.style.cssText = 'position:fixed;inset:0;z-index:9999;display:none;place-items:center;background:rgba(11,15,20,.92);color:#fff;font:700 19px sans-serif;text-align:center;line-height:1.6';
+document.body.appendChild(glNote);
 renderer.domElement.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();
-  try { S.settings.quality = 'low'; S.settings.traffic = 'low'; S.settings.peds = false; S.settings.mirrors = false; S.settings.fx = false; save(); } catch (er) { /* 무시 */ }
-  const d = document.createElement('div');
-  d.style.cssText = 'position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#0b0f14;color:#fff;font:700 20px sans-serif;text-align:center';
-  d.innerHTML = '🔧 그래픽 메모리가 부족해서<br>더 가볍게 바꿔 다시 시작해요…';
-  document.body.appendChild(d);
-  setTimeout(() => location.reload(), 1500);
+  glNote.innerHTML = '🔧 화면을 다시 준비하는 중이에요… 잠시만요';
+  glNote.style.display = 'grid';
+  clearTimeout(glLostT);
+  glLostT = setTimeout(() => {
+    let n = 0; try { n = +(sessionStorage.getItem('rk_gl') || 0) + 1; sessionStorage.setItem('rk_gl', n); sessionStorage.setItem('rk_ultra', '1'); } catch (er) { /* 무시 */ }
+    try { S.settings.quality = 'low'; S.settings.traffic = 'low'; S.settings.peds = false; S.settings.mirrors = false; S.settings.fx = false; save(); } catch (er) { /* 무시 */ }
+    if (n <= 2) { glNote.innerHTML = '🔧 그래픽 메모리가 부족해서<br>더 가볍게 바꿔 다시 시작해요…'; setTimeout(() => location.reload(), 1200); }
+    else glNote.innerHTML = '😥 이 기기의 그래픽 메모리가 부족해요<br><small>다른 앱과 브라우저 탭을 모두 닫은 뒤</small><br><button onclick="location.reload()" style="margin-top:14px;padding:12px 26px;border-radius:12px;border:0;background:#2fb8ff;color:#fff;font:800 18px sans-serif">다시 시작</button>';
+  }, 4000);
 }, false);
+renderer.domElement.addEventListener('webglcontextrestored', () => { clearTimeout(glLostT); glNote.style.display = 'none'; renderer.shadowMap.needsUpdate = true; }, false);
 // 차량 반사용 환경맵
 {
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -1050,7 +1060,7 @@ function toMenu() {
   show('title');
 }
 function desiredTraffic() {
-  const base = Math.round(({ low: 30, normal: 60, high: 95 }[S.settings.traffic] || 60) * (Q === 'low' ? 0.6 : Q === 'medium' ? 0.85 : 1));
+  const base = Math.round(({ low: 30, normal: 60, high: 95 }[S.settings.traffic] || 60) * (ULTRA ? 0.3 : LITE ? 0.45 : Q === 'low' ? 0.6 : Q === 'medium' ? 0.85 : 1));
   const h = env ? env.hour : 12;
   const m = (h >= 7 && h < 9.5) || (h >= 17.5 && h < 19.5) ? 1.3 : h < 5 ? 0.35 : h >= 22 ? 0.6 : 1;
   const hw = G.road && G.road.edge && G.road.edge.corr ? 0.55 : 1; // 서울 가는 고속도로는 길이 하나라 덜 촘촘하게
@@ -1121,7 +1131,7 @@ const app = {
   whenReady(f) { if (app.ready) f(); else { app.waiters.push(f); toast('🗺️ 광주 지도를 마저 준비하고 있어요. 곧 시작해요!', '', 2500); } },
   startMode, resume, toMenu,
   inGame: () => G.state === 'play' || G.state === 'pause',
-  applySettings() { audio.setVolume(S.settings.volume); audio.voice = S.settings.voice; applyMute(); applyEasy(); { const cap = Math.min(devicePixelRatio, S.settings.sharp ? 2 : Q === 'high' ? 1.6 : Q === 'medium' ? 1.35 : 1.15); if (typeof PERF !== 'undefined' && Math.abs(cap - PERF.base) > 0.01) { PERF.base = PERF.pr = cap; renderer.setPixelRatio(cap); renderer.setSize(innerWidth, innerHeight); } } G.mirrorsOn = S.settings.mirrors; },
+  applySettings() { audio.setVolume(S.settings.volume); audio.voice = S.settings.voice; applyMute(); applyEasy(); { const cap = Math.min(devicePixelRatio, S.settings.sharp ? 2 : Q === 'high' ? 1.6 : Q === 'medium' ? 1.35 : ULTRA ? 0.75 : LITE ? 1 : 1.15); if (typeof PERF !== 'undefined' && Math.abs(cap - PERF.base) > 0.01) { PERF.base = PERF.pr = cap; renderer.setPixelRatio(cap); renderer.setSize(innerWidth, innerHeight); } } G.mirrorsOn = S.settings.mirrors; },
   setTimeWeather(h, w) { if (env) { env.hour = h; env.setWeather(w); } },
   toHub(id) { const h = HUBS.find((x) => x.id === id); if (!h) return; const q = hubCurb(h) || { x: h.x, z: h.z, heading: 0 }; placePlayer(q.x, q.z, q.heading); },
   teleport(k) {

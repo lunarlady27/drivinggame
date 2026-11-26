@@ -1274,7 +1274,9 @@ export async function buildWorld(scene, progress = () => {}, opts = {}) {
   const tick = () => new Promise((r) => setTimeout(r, 0));
   if (!GJ) { progress(0.02, '광주 실제 지도 자료를 받는 중...'); [GJ, GH, GD, GP, GB, GG, GI] = await Promise.all([loadData('gjmap'), loadData('gjhwy').catch(() => null), loadData('hw_daejeon').catch(() => null), loadData('rp_gwangju').catch(() => null), loadData('hw_busan').catch(() => null), loadData('hw_daegu').catch(() => null), loadData('hw_incheon').catch(() => null)]); }
   // 실제 지도(오픈스트리트맵) 데이터가 있으면 그걸로 도로망을 만듦
-  if (GJ && GJ.nodes) { buildNetworkOSM(GJ); OG.cell = 5; } else buildNetwork(opts.extraRoads || []);
+  // 태블릿 가벼운 모드: 짧은 골목길(전체 길의 60%)은 빼고 만듦 → 차선 · 표지 · 메모리가 크게 줄어요
+  const liteMap = (m) => ({ ...m, ways: m.ways.filter((w) => { if (w[0] < 5) return true; const a = m.nodes[w[2]], b = m.nodes[w[3]]; return a && b && Math.hypot(a[0] - b[0], a[1] - b[1]) > 160; }) });
+  if (GJ && GJ.nodes) { buildNetworkOSM(opts.lite ? liteMap(GJ) : GJ); OG.cell = 5; } else buildNetwork(opts.extraRoads || []);
   // 지도 범위
   if (W.osm) { const b = GJ.bounds; W.bounds = { x0: b[0] - 300, x1: b[1] + 300, z0: b[2] - 300, z1: b[3] + 300 }; }
   else { const c0 = toXZ(35.068, 127.035), c1 = toXZ(35.258, 126.722); W.bounds = { x0: Math.min(c0.x, c1.x), x1: Math.max(c0.x, c1.x), z0: Math.min(c0.z, c1.z), z1: Math.max(c0.z, c1.z) }; }
@@ -2899,7 +2901,8 @@ export async function buildWorld(scene, progress = () => {}, opts = {}) {
     W.curve = { pts, hw: 3.9, len: pts.length * 2.5 };
   }
   // ---------- 광주 → 서울 고속도로 (+ 천안분기점 → 대전) ----------
-  if (W.osm && GH && GH.pts) {
+  // 태블릿 가벼운 모드: 다른 도시 가는 고속도로는 안 만듦 (메모리 100MB 가까이 아낌)
+  if (W.osm && GH && GH.pts && !opts.lite) {
     progress(0.97, '서울 · 대전 · 부산 · 대구 · 인천 가는 고속도로를 잇는 중...');
     await tick();
     const addHwy = (H, opts, meta) => {
