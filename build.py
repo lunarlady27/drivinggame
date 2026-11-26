@@ -6,9 +6,9 @@
 """
 import os, re, shutil, json, hashlib, subprocess, sys
 
-ROOT = '/home/claude'
+ROOT = os.path.dirname(os.path.abspath(__file__))
 DIST = os.path.join(ROOT, 'dist')
-VENDOR = '/tmp/hanpan_html5/vendor'
+VENDOR = os.environ.get('HANPAN_VENDOR', '/tmp/hanpan_html5/vendor')
 GAMES = [  # (소스, 폴더, 영어 이름, 메뉴, 멈춤 화면들, 숨길 함께하기 요소)
     ('game', 'hanpandrive', 'Hanpan Drive', '.screen.show', '#loading:not(.hidden),#modal:not(.hidden)', ['[data-go="mp"]', '#s-mp']),
     ('shooter', 'corebreaker', 'Core Breaker', '#menu', '#pause,#over,#lobby,#agents,#setscr,#help', ['#m-make', '#m-join', '#code', '#mp-note']),
@@ -17,6 +17,7 @@ GAMES = [  # (소스, 폴더, 영어 이름, 메뉴, 멈춤 화면들, 숨길 �
     ('royale', 'lastisland', 'Last Island', '#menu', '#pause,#end,#lobby', ['#mk', '#jn', '#code', '#mpn']),
     ('fight', 'duelstrike', 'Duel Strike', '#menu', '#pause,#end,#lobby', ['button[data-mode="online"]', '#onl']),
     ('mini', 'hanpanmini', 'Hanpan Mini', '#hub', '#over', []),
+    ('racing', 'turbocircuit', 'Turbo Circuit', '#menu', '#overlay:not(.hidden)', []),
 ]
 SDK = '<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>'
 HOME = ('<a href="../index.html" id="hanpanHome" style="position:fixed;left:50%;bottom:6px;transform:translateX(-50%);'
@@ -129,7 +130,7 @@ LINKS = {
     'https://claude.ai/artifact/4unzeNHuHw2BVyQXtad6Ts': 'hanpandrive', 'https://claude.ai/artifact/3h8puaA8Er32RnpAFmf3o8': 'corebreaker',
     'https://claude.ai/artifact/Kzs6Dxy9u3p2LHmNX6wrZJ': 'poparena', 'https://claude.ai/artifact/QPhLEkQPALRm86SqFZiaL6': 'cubeland',
     'https://claude.ai/artifact/Jk4WCxvPQQACRzGW2bir6w': 'lastisland', 'https://claude.ai/artifact/JdYjQr27ktGKe8RwxejmL2': 'duelstrike',
-    'https://claude.ai/artifact/U9YexRBQNzFLxF7gDghQ5v': 'hanpanmini',
+    'https://claude.ai/artifact/U9YexRBQNzFLxF7gDghQ5v': 'hanpanmini', '../racing/index.html': 'turbocircuit',
 }
 
 
@@ -235,7 +236,7 @@ def store_assets():
     subprocess.run(['zip', '-qr9', out, 'android'], cwd=os.path.dirname(ap), check=True)
     shutil.rmtree(os.path.dirname(ap))
     cg = os.path.join(DIST, 'crazygames')
-    subprocess.run('zip -q0 ../hanpan_crazygames_7games.zip *_crazygames.zip', shell=True, cwd=cg, check=True)
+    subprocess.run('zip -q0 ../hanpan_crazygames_8games.zip *_crazygames.zip', shell=True, cwd=cg, check=True)
 
 
 if __name__ == '__main__':
