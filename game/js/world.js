@@ -1284,8 +1284,15 @@ export async function buildWorld(scene, progress = () => {}, opts = {}) {
   if (!GJ) { progress(0.02, '광주 실제 지도 자료를 받는 중...'); [GJ, GH, GD, GP, GB, GG, GI] = await Promise.all([loadData('gjmap'), loadData('gjhwy').catch(() => null), loadData('hw_daejeon').catch(() => null), loadData('rp_gwangju').catch(() => null), loadData('hw_busan').catch(() => null), loadData('hw_daegu').catch(() => null), loadData('hw_incheon').catch(() => null)]); }
   // 실제 지도(오픈스트리트맵) 데이터가 있으면 그걸로 도로망을 만듦
   // 태블릿 가벼운 모드: 짧은 골목길(전체 길의 60%)은 빼고 만듦 → 차선 · 표지 · 메모리가 크게 줄어요
-  const liteMap = (m) => ({ ...m, ways: m.ways.filter((w) => { if (w[0] < 5) return true; const a = m.nodes[w[2]], b = m.nodes[w[3]]; return a && b && Math.hypot(a[0] - b[0], a[1] - b[1]) > 160; }) });
-  if (GJ && GJ.nodes) { buildNetworkOSM(opts.lite ? liteMap(GJ) : GJ); OG.cell = 5; } else buildNetwork(opts.extraRoads || []);
+  // 태블릿: 시내 중심 반경 5km만 (광천터미널 · 상무지구 · 금남로 · 시청 포함) — 길 · 건물 · 강 · 철길 모두
+  const LR = 5000, inR = (x, z) => x * x + z * z < LR * LR;
+  const liteMap = (m) => ({ ...m,
+    ways: m.ways.filter((w) => { const a = m.nodes[w[2]], b = m.nodes[w[3]]; if (!a || !b || !inR(a[0], a[1]) || !inR(b[0], b[1])) return false; if (w[0] < 5) return true; return Math.hypot(a[0] - b[0], a[1] - b[1]) > 160; }),
+    blds: m.blds.filter((b) => inR(b[1], b[2])),
+    water: m.water.filter((w) => { for (let i = 1; i < w.length; i += 2) if (inR(w[i], w[i + 1])) return true; return false; }),
+    rail: m.rail.filter((r) => { for (let i = 0; i < r.length; i += 2) if (inR(r[i], r[i + 1])) return true; return false; }) });
+  if (GJ && GJ.nodes && opts.lite) GJ = liteMap(GJ);
+  if (GJ && GJ.nodes) { buildNetworkOSM(GJ); OG.cell = 5; } else buildNetwork(opts.extraRoads || []);
   // 지도 범위
   if (W.osm) { const b = GJ.bounds; W.bounds = { x0: b[0] - 300, x1: b[1] + 300, z0: b[2] - 300, z1: b[3] + 300 }; }
   else { const c0 = toXZ(35.068, 127.035), c1 = toXZ(35.258, 126.722); W.bounds = { x0: Math.min(c0.x, c1.x), x1: Math.max(c0.x, c1.x), z0: Math.min(c0.z, c1.z), z1: Math.max(c0.z, c1.z) }; }
@@ -2987,6 +2994,8 @@ export async function buildWorld(scene, progress = () => {}, opts = {}) {
     return def.promise;
   };
   buildSpawns();
+  // 태블릿: 잘라 낸 지도 밖(광주 외곽) 출발 위치는 빼기 (다른 도시 출발은 그대로)
+  if (LITE_W) for (const k of Object.keys(W.spawns)) { const sp = W.spawns[k]; if (!/^(hw_|[a-z]+\d?_)/.test(k) && sp && Math.hypot(sp.x, sp.z) > 5200) delete W.spawns[k]; }
   W.nBuildings = nBld;
   progress(1, '완료!');
 }
