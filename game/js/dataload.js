@@ -61,5 +61,14 @@ export function loadData(path) {
   }
   const f = MODS[name];
   if (!f) return Promise.reject(new Error('모르는 지도 자료: ' + name));
-  return f().then((m) => m.default);
+  // 태블릿 · 느린 인터넷에서 큰 지도 파일이 중간에 끊기면 (Failed to fetch dynamically imported module) 다시 받아요
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const retry = async (err) => {
+    for (let n = 1; n <= 3; n++) {
+      await wait(800 * n);
+      try { return (await import(/* @vite-ignore */ new URL('./' + name + '.js?retry=' + n + '_' + Date.now(), import.meta.url).href)).default; } catch (e) { err = e; }
+    }
+    throw err;
+  };
+  return f().then((m) => m.default, retry);
 }

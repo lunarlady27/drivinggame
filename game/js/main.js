@@ -1728,8 +1728,9 @@ function updateCamera(dt) {
     camera.lookAt(P.px, py + 1.4, P.pz);
   } else if (name === 'chase' || name === 'orbit') {
     const yaw = (name === 'orbit' ? hd : G.camHeading) + G.lookYaw + (name === 'orbit' ? Math.PI * 0.75 : 0);
-    const dist = (isBus ? 15 : 7.2) * G.zoom * (name === 'orbit' ? 1.15 : 1);
-    const hgt = (isBus ? 4.8 : 2.4) * (0.6 + G.zoom * 0.4) + G.lookPitch * -6;
+    const art = P.spec.artic ? 1.45 : 1; // 굴절버스: 뒤칸까지 보이게 더 멀리
+    const dist = (isBus ? 15 : 7.2) * art * G.zoom * (name === 'orbit' ? 1.15 : 1);
+    const hgt = (isBus ? 4.8 * art : 2.4) * (0.6 + G.zoom * 0.4) + G.lookPitch * -6;
     _v.set(sim.x - Math.sin(yaw) * dist, P.y + Math.max(0.6, hgt), sim.z - Math.cos(yaw) * dist);
     if (blocked(_v.x, _v.z) && sim.x < -600) _v.y += 8;
     if (sim.level === 'ug' || (UG && levelAt(sim.x, sim.z, sim.level).ramp > 0.3)) _v.y = Math.min(_v.y, -0.9);

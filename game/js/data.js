@@ -253,6 +253,7 @@ export const BUSES = [
   B('km_coach', 'kmobil', '로드스타 (시외 우등)', '시외·우등버스급', '시외 우등버스', 'coach', false, false, false, 280000000, 12.0, 2.49, 3.5, 6.1, 13000, 410, 110, 17, 10.9, 'orange', { coach: true }),
   B('km_ev_low', 'kmobil', '스마트시티 E 저상 (전기)', 'KGM 전기 저상버스급', '저상 전기 시내버스', 'km', true, true, false, 430000000, 11.0, 2.49, 3.3, 5.9, 12400, 335, 85, 17, 10.4, 'green'),
   B('nd_ev_low', 'nord', '시티라인 E 저상 (전기)', '수입 전기 저상버스급', '저상 수입 전기버스', 'nd', true, true, false, 520000000, 12.0, 2.55, 3.3, 5.88, 13000, 360, 85, 17, 10.6, 'teal'),
+  B('hb_artic', 'hanbitbus', '메가시티 굴절 (전기 · 18m)', '굴절 전기버스급', '굴절 저상 BRT 버스 · 전장 18m', 'hb', true, true, false, 1100000000, 12.0, 2.55, 3.35, 5.85, 19000, 469, 80, 24, 11.5, 'blue', { artic: true, lenR: 6.2 }),
   B('hb_country_e', 'hanbitbus', '컨트리 E (중형 전기)', '중형 전기버스급', '중형 전기 마을버스', 'country', false, true, false, 160000000, 7.7, 2.07, 2.8, 4.3, 6300, 180, 90, 15, 7.3, 'yellow'),
 ];
 if (STORE) for (const b of BUSES) b.ref = '';

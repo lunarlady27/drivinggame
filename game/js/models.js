@@ -648,7 +648,7 @@ export function buildCar(spec, opts = {}) {
   }
 
   // 등화
-  const lights = lightMats(lod);
+  const lights = opts.lights || lightMats(lod);
   obj.lights = lights;
   const hy = hoodY - 0.1;
   if (spec.ev || spec.brand === 'sora' || spec.brand === 'hanbit') M.add(GEO.box, lights.head, mx(0, hoodY - 0.04, L / 2 - 0.03, 0, 0, 0, W - 0.25, 0.03, 0.12));
@@ -826,7 +826,7 @@ let adSeed = 0;
 export function buildBus(spec, opts = {}) {
   const L = spec.len, W = spec.wid, H = spec.hei, low = spec.low, lod = !!opts.lod;
   const country = spec.style === 'country';
-  const coach = !!spec.coach, dd = !!spec.dd; // 고속·공항 리무진 / 2층 버스
+  const coach = !!spec.coach, dd = !!spec.dd, trailer = !!opts.trailer; // trailer: 굴절버스 뒤칸 // 고속·공항 리무진 / 2층 버스
   const DK0 = 2.1, DK1 = 2.42; // 2층 버스: 1층 창 위 · 2층 창 아래
   const liv = LIVERY_BY_ID[opts.livery || spec.livery] || LIVERY_BY_ID.teal;
   const group = new THREE.Group();
@@ -842,7 +842,7 @@ export function buildBus(spec, opts = {}) {
   const doorW = country ? 0.85 : 1.2;
   const d0 = crF + 0.06;
   const fdC = L / 2 - d0 - doorW / 2;
-  const mdC = country || coach ? null : zR + 1.85;
+  const mdC = country || coach || trailer ? null : zR + 1.85;
   const wTop = topY - 0.1;
   const wBot = low ? 1.12 : country ? 1.25 : coach ? 1.72 : 1.55;
   const wsBot = country ? 1.15 : coach ? 1.42 : spec.style === 'nd' ? 0.95 : 1.02;
@@ -886,7 +886,7 @@ export function buildBus(spec, opts = {}) {
         g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(rx + rw / 2 - 18, ry + rh - 16, 36, 5);
       }
     }
-    if (!isRight) { g.fillStyle = '#111417'; g.fillRect(...rect(crF, 1.62, wBot - 0.32, wTop)); cut(g, ...rect(crF + 0.02, 1.56, wBot - 0.3, wTop - 0.04), 8, 'rgba(10,16,20,0.55)'); }
+    if (!isRight && !trailer) { g.fillStyle = '#111417'; g.fillRect(...rect(crF, 1.62, wBot - 0.32, wTop)); cut(g, ...rect(crF + 0.02, 1.56, wBot - 0.3, wTop - 0.04), 8, 'rgba(10,16,20,0.55)'); }
     if (isRight) {
       const dTop = dd ? DK0 : wTop + 0.02;
       cut(g, ...rect(d0, d0 + doorW, skirt - 0.05, dTop), 4, null);
@@ -914,7 +914,7 @@ export function buildBus(spec, opts = {}) {
         g.font = `700 ${Math.round(rh * 0.2)}px "Noto Sans KR", sans-serif`; g.fillText(AD[3], rx + rw / 2, ry + rh * 0.78);
       }
     }
-    for (const za of [zF, zR]) {
+    for (const za of trailer ? [zR] : [zF, zR]) {
       const dx = X(L / 2 - za);
       g.save(); g.globalCompositeOperation = 'destination-out';
       g.beginPath(); g.arc(dx, Y(r), (r + 0.1) * pxm, 0, Math.PI * 2); g.fill(); g.restore();
@@ -978,11 +978,11 @@ export function buildBus(spec, opts = {}) {
   });
   const fMat = new THREE.MeshStandardMaterial({ map: front.tex, transparent: true, alphaTest: 0.02, side: THREE.DoubleSide, roughness: 0.22, metalness: 0.2, envMap: ENV.map });
   front.geo.translate(0, 0, L / 2 - crF); front.top.translate(0, 0, L / 2 - crF);
-  const fm = new THREE.Mesh(front.geo, fMat); fm.castShadow = true; body.add(fm);
+  const fm = new THREE.Mesh(front.geo, fMat); fm.castShadow = true; if (!trailer) body.add(fm);
   obj.frontMesh = fm; // 운전석 시점에서는 숨김 (짙은 앞유리 때문에 앞이 안 보이던 문제)
   // 안쪽에서 보이는 앞유리 틀 (A필러 · 위 가로대) — 밖에서는 앞판에 가려 안 보임
-  for (const sx of [1, -1]) M.add(GEO.box, MAT.black, mx(sx * (W / 2 - 0.035), (wsBot + H - 0.6) / 2, L / 2 - crF - 0.04, 0, 0, 0, 0.05, H - 0.6 - wsBot, 0.06));
-  M.add(GEO.box, MAT.black, mx(0, H - 0.5, L / 2 - crF - 0.04, 0, 0, 0, W - 0.1, 0.22, 0.08));
+  if (!trailer) for (const sx of [1, -1]) M.add(GEO.box, MAT.black, mx(sx * (W / 2 - 0.035), (wsBot + H - 0.6) / 2, L / 2 - crF - 0.04, 0, 0, 0, 0.05, H - 0.6 - wsBot, 0.06));
+  if (!trailer) M.add(GEO.box, MAT.black, mx(0, H - 0.5, L / 2 - crF - 0.04, 0, 0, 0, W - 0.1, 0.22, 0.08));
   const frontZ = (x, y) => L / 2 - crF + front.surf(x, y);
 
   // ---- 뒷면 ----
@@ -1135,6 +1135,7 @@ export function buildBus(spec, opts = {}) {
       for (const x of [0.75, -0.75]) M.add(GEO.box, MAT.cabinLight, mx(x, roofY - 0.05, -0.2, 0, 0, 0, 0.12, 0.03, L - 3));
       M.add(GEO.box, MAT.busFloor, mx(0, DK0 + 0.2, L / 2 - 1.88, 0, 0, 0, W - 0.1, 0.4, 0.06)); // 2층 앞 칸막이
     }
+    if (!trailer) {
     // 운전석
     const dX = W / 2 - 0.62, dZ = L / 2 - 1.25;
     seat(dX, dZ, dFloor + 0.12, MAT.seat);
@@ -1142,6 +1143,7 @@ export function buildBus(spec, opts = {}) {
     M.add(GEO.box, MAT.interior, mx(-0.1, floorY + 0.5, L / 2 - 0.35, 0, 0, 0, 1.6, 0.25, 0.35));
     // 운전석 보호 칸막이
     M.add(GEO.box, MAT.glass, mx(W / 2 - 1.08, floorY + 1.0, dZ - 0.1, 0, 0, 0, 0.03, 0.9, 0.9));
+    }
     // 교통카드 단말기
     M.add(GEO.box, MAT.trim, mx(0.05, floorY + 0.55, L / 2 - 1.55, 0, 0, 0, 0.06, 1.1, 0.06));
     M.add(GEO.box, MAT.trim, mx(0.05, floorY + 1.15, L / 2 - 1.55, 0, 0, 0, 0.18, 0.24, 0.14));
@@ -1184,7 +1186,7 @@ export function buildBus(spec, opts = {}) {
 
   // ---- 토끼귀 미러 ----
   const mirrorFaces = [];
-  for (const s of [1, -1]) {
+  if (!trailer) for (const s of [1, -1]) {
     const ax = s * (W / 2 - 0.12), ay = H - 0.3, az = frontZ(s * (W / 2 - 0.12), H - 0.3) - 0.05;
     const bx = s * (W / 2 + 0.22), by = H - 0.2, bz = L / 2 + 0.48;
     const dx = bx - ax, dy = by - ay, dz = bz - az, len = Math.hypot(dx, dy, dz);
@@ -1250,7 +1252,7 @@ export function buildBus(spec, opts = {}) {
   };
 
   // ---- 와이퍼 ----
-  for (const px of [-0.95, 0.12]) {
+  if (!trailer) for (const px of [-0.95, 0.12]) {
     const pivot = new THREE.Group();
     pivot.position.set(px, wsBot + 0.06, frontZ(px, wsBot + 0.06) + 0.03);
     pivot.rotation.x = -0.12;
@@ -1266,7 +1268,7 @@ export function buildBus(spec, opts = {}) {
   // ---- 행선판 LED ----
   const signF = makeLED(512, 64);
   const sf = new THREE.Mesh(GEO.plane, signF.mat);
-  sf.scale.set(W - 0.7, 0.34, 1); sf.position.set(0, H - 0.36, frontZ(0, H - 0.36) + 0.012); sf.rotation.x = -0.25; body.add(sf);
+  sf.scale.set(W - 0.7, 0.34, 1); sf.position.set(0, H - 0.36, frontZ(0, H - 0.36) + 0.012); sf.rotation.x = -0.25; if (!trailer) body.add(sf);
   const signS = makeLED(256, 64);
   const ss = new THREE.Mesh(GEO.plane, signS.mat);
   ss.scale.set(1.1, 0.26, 1); ss.position.set(-W / 2 - 0.012, wTop - 0.25, fdC - doorW / 2 - 0.85); ss.rotation.y = -Math.PI / 2; body.add(ss);
@@ -1286,7 +1288,7 @@ export function buildBus(spec, opts = {}) {
   obj.setSign(opts.route || '회송', opts.dest || '차고지', opts.routeColor || '#555');
 
   // 실내 다음 정류장 안내기 / 계기판
-  if (!lod) {
+  if (!lod && !trailer) {
     const inner = makeLED(512, 64);
     const im = new THREE.Mesh(GEO.plane, inner.mat);
     im.scale.set(1.3, 0.17, 1); im.position.set(-0.1, roofY - 0.22, L / 2 - 1.7); im.rotation.y = Math.PI; body.add(im);
@@ -1358,7 +1360,7 @@ export function buildBus(spec, opts = {}) {
 
   // 번호판
   const pm = plateMat(opts.plate || randomPlate('bus'), 'bus');
-  const pf = new THREE.Mesh(GEO.plane, pm); pf.scale.set(0.52, 0.11, 1); pf.position.set(0, 0.48, frontZ(0, 0.48) + 0.02); body.add(pf);
+  const pf = new THREE.Mesh(GEO.plane, pm); pf.scale.set(0.52, 0.11, 1); pf.position.set(0, 0.48, frontZ(0, 0.48) + 0.02); if (!trailer) body.add(pf);
   const pr = new THREE.Mesh(GEO.plane, pm); pr.scale.set(0.52, 0.11, 1); pr.position.set(-0.4, 0.62, rearZ(0.4, 0.62) - 0.02); pr.rotation.y = Math.PI; body.add(pr);
   obj.plates = [pf, pr];
 
@@ -1366,7 +1368,7 @@ export function buildBus(spec, opts = {}) {
   {
     const WH = new Merger();
     const whM = new THREE.MeshStandardMaterial({ color: 0x0b0c0e, roughness: 0.95 });
-    for (const za of [zF, zR]) for (const sx of [1, -1]) {
+    for (const za of trailer ? [zR] : [zF, zR]) for (const sx of [1, -1]) {
       const tw = za === zR ? 0.56 : 0.3, inner = W / 2 - 0.33 - tw / 2 - 0.04; // 타이어 안쪽 면
       WH.add(GEO.box, whM, mx(sx * inner, r + 0.05, za, 0, 0, 0, 0.03, 2 * r + 0.1, 2 * r + 0.3));         // 안쪽 벽 (반대편이 비쳐 보이지 않게)
       WH.add(GEO.box, whM, mx(sx * (inner + W / 2) / 2, 2 * r + 0.13, za, 0, 0, 0, W / 2 - inner, 0.03, 2 * r + 0.3)); // 천장
@@ -1376,7 +1378,7 @@ export function buildBus(spec, opts = {}) {
   // 바퀴: 앞 단륜, 뒤 복륜
   const wx = W / 2 - 0.33;
   addWheels(obj, group, [
-    { x: wx, z: zF, front: true, w: 0.3 }, { x: -wx, z: zF, front: true, w: 0.3 },
+    ...(trailer ? [] : [{ x: wx, z: zF, front: true, w: 0.3 }, { x: -wx, z: zF, front: true, w: 0.3 }]),
     { x: wx, z: zR, w: 0.56 }, { x: -wx, z: zR, w: 0.56 },
   ], r, 0.3, 'bus', lod);
 
@@ -1408,8 +1410,49 @@ export function buildBus(spec, opts = {}) {
 }
 
 export function buildVehicle(spec, opts = {}) {
-  const obj = spec.type === 'bus' ? buildBus(spec, opts) : buildCar(spec, opts);
+  const obj = spec.artic ? buildArtic(spec, opts) : spec.type === 'bus' ? buildBus(spec, opts) : buildCar(spec, opts);
   if (opts.school) addSchoolKit(obj, spec);
+  return obj;
+}
+// 🚌 굴절버스: 앞칸(운전석 · 앞문 · 가운데문) + 주름 관절 + 뒤칸(뒷문 · 뒷바퀴). 뒤칸은 앞칸을 따라 꺾여요
+function buildArtic(spec, opts) {
+  const LF = spec.len, LR = spec.lenR || 6.2, J = 0.5; // J: 관절(주름) 반 길이
+  const obj = buildBus(spec, opts);
+  const tSpec = { ...spec, id: spec.id + '_t', len: LR, wb: 1.3, artic: false };
+  const tr = buildBus(tSpec, { ...opts, trailer: true, lights: obj.lights });
+  const pivot = new THREE.Group(); pivot.position.z = -LF / 2 - J; obj.body.add(pivot);
+  tr.group.position.z = -J - LR / 2; pivot.add(tr.group);
+  // 주름 관절 (검은 고무 주름 + 링)
+  const H = spec.hei, W = spec.wid;
+  const bel = new THREE.Mesh(GEO.box, MAT.black); bel.scale.set(W - 0.12, H - 0.45, 2 * J + 0.3); bel.position.y = 0.3 + (H - 0.45) / 2; pivot.add(bel);
+  for (let k = -3; k <= 3; k++) { const rg = new THREE.Mesh(GEO.box, MAT.trim); rg.scale.set(W - 0.06, H - 0.4, 0.05); rg.position.set(0, bel.position.y, k * (J / 3.5)); pivot.add(rg); }
+  for (const w of tr.wheels) obj.wheels.push(w);
+  obj.trailer = tr; obj.articPivot = pivot;
+  const ss = obj.setSign; if (ss && tr.setSign) { obj.setSign = (...x) => { ss(...x); tr.setSign(...x); }; tr.setSign(opts.route || '회송', opts.dest || '차고지', opts.routeColor || '#555'); }
+  if (tr.lights !== obj.lights) obj.trailerLights = tr.lights;
+  // 뒤칸 문은 가운데 문과 같이 열리고 닫혀요
+  const upd = obj.updateDoors;
+  let th = null, lx = 0, lz = 0;
+  const Lt = J + LR / 2 + 1.3 * 0.5; // 관절 → 뒤칸 바퀴 거리 (대략)
+  obj.updateDoors = (dt) => {
+    upd(dt);
+    const md = obj.doors[1] || obj.doors[0];
+    for (const d of tr.doors) d.target = md ? md.target : 0;
+    tr.updateDoors(dt);
+    // 꺾임: 앞칸 방향을 뒤칸 방향이 따라가요 (트레일러 운동 방정식)
+    const g = obj.group, hd = g.rotation.y, px = g.position.x, pz = g.position.z;
+    if (th === null || !dt) { th = hd; lx = px; lz = pz; return; }
+    const dx = px - lx, dz = pz - lz; lx = px; lz = pz;
+    const step = Math.hypot(dx, dz);
+    if (step > 30) { th = hd; return; } // 순간이동
+    const fwd = dx * Math.sin(hd) + dz * Math.cos(hd);
+    let rel = th - hd; rel = Math.atan2(Math.sin(rel), Math.cos(rel));
+    rel += -(fwd / Lt) * Math.sin(rel) - 0; // 앞칸이 돈 만큼은 자동 반영(th 고정 기준)
+    rel = Math.max(-0.65, Math.min(0.65, rel));
+    th = hd + rel;
+    pivot.rotation.y = rel;
+  };
+  // 돌 때 앞칸 방향이 바뀌면 th 는 그대로라 rel 이 생겨요 → 위 식으로 다시 펴짐
   return obj;
 }
 // 🚸 어린이 통학차량: 지붕 위 '어린이 보호차량' 표지 + 모서리 경광등 (주황 2 · 빨강 2, 서면 깜빡)
