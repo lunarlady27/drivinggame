@@ -16,7 +16,7 @@ export class VehicleSim {
     this.isBus = isBus;
     this.mass = spec.mass;
     this.len = spec.len; this.wid = spec.wid;
-    this.wb = isBus ? spec.wb : spec.len * ({ hatch: 0.67, boxy: 0.7, cuv: 0.64, coupe: 0.6, suv: 0.6, suv_l: 0.6, mpv: 0.6, gwagon: 0.59 }[spec.body] || 0.585);
+    this.wb = isBus ? spec.wb : spec.len * ({ hatch: 0.67, boxy: 0.7, cuv: 0.64, coupe: 0.6, suv: 0.6, suv_l: 0.6, mpv: 0.6, gwagon: 0.59, pickup: 0.62 }[spec.body] || 0.585);
     // 버스: 시원하게 달리도록 힘 · 최고속도를 높임 (시내버스도 최고 약 120km/h)
     this.power = (spec.mass * 385.8 / spec.acc) * 1.18 * (1 + 0.08 * tune.engine) * (isBus ? 1.35 : 1) * perf;
     this.vmax = ((isBus ? Math.min(Math.max(spec.vmax, 100) * 1.2, 130) : spec.vmax) / 3.6) * (1 + 0.03 * tune.engine);

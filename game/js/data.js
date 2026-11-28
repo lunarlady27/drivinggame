@@ -97,6 +97,18 @@ export const CARS = [
   C('st_glc', 'stern', 'SX4', 'GLC급', '중형 SUV', 'suv', 78000000, 4.72, 1.89, 1.64, 1950, 258, 240, 6.2, 5.8),
   C('st_gle', 'stern', 'SX6', 'GLE급', '대형 SUV', 'suv_l', 115000000, 4.93, 2.02, 1.77, 2300, 381, 250, 5.6, 6.1),
   C('st_eqe', 'stern', 'SQ-E', 'EQ 시리즈급', '전기 세단', 'sedan_l', 95000000, 4.95, 1.96, 1.51, 2400, 292, 210, 6.4, 5.8, true),
+  // ---- 새로 들어온 차 (가상 이름) ----
+  C('hb_terra', 'hanbit', '테라 픽업', '', '중형 픽업트럭', 'pickup', 39000000, 5.4, 1.95, 1.84, 2150, 202, 180, 9.6, 6.4),
+  C('hb_terra_e', 'hanbit', '테라 픽업 E', '', '전기 픽업트럭', 'pickup', 62000000, 5.45, 1.97, 1.86, 2600, 360, 185, 5.9, 6.4, true),
+  C('hb_veloce', 'hanbit', '벨로체 N', '', '고성능 해치백', 'hatch', 36000000, 4.35, 1.8, 1.45, 1420, 280, 250, 5.6, 5.4),
+  C('hb_aurora', 'hanbit', '오로라 EV 쿠페', '', '전기 스포츠 쿠페', 'coupe', 69000000, 4.85, 1.9, 1.38, 2100, 600, 260, 3.5, 5.8, true),
+  C('hb_mini_e', 'hanbit', '토토 E', '', '경형 전기차', 'hatch', 23000000, 3.6, 1.6, 1.58, 1150, 113, 150, 11.5, 4.8, true),
+  C('sr_volt', 'sora', '볼트 9', '', '대형 전기 SUV', 'suv_l', 73000000, 5.01, 1.98, 1.76, 2580, 380, 200, 5.3, 6.0, true),
+  C('sr_dash', 'sora', '대시 GT', '', '스포츠 세단', 'sedan', 52000000, 4.83, 1.87, 1.4, 1780, 370, 270, 4.9, 5.7),
+  C('sr_cargo', 'sora', '카고 밴', '', '경상용 밴', 'boxy', 31000000, 5.15, 1.88, 2.0, 2000, 160, 160, 13.5, 5.9),
+  C('zn_gt', 'zenith', 'Z-GT 로드스터', '', '오픈 스포츠카', 'coupe', 125000000, 4.5, 1.92, 1.28, 1650, 520, 295, 3.8, 5.6),
+  C('st_van', 'stern', 'SV 투어러', '', '고급 미니밴', 'mpv', 98000000, 5.14, 1.93, 1.9, 2350, 245, 210, 8.6, 6.0),
+  C('st_pick', 'stern', 'SP 픽업', '', '고급 픽업트럭', 'pickup', 88000000, 5.34, 1.92, 1.82, 2250, 258, 195, 7.4, 6.5),
 ];
 
 // ===== 실제 차 이름 · 트림 · 가격 (원) =====
@@ -176,9 +188,9 @@ export const OPTIONS = [
   { id: 'ambient', name: '앰비언트 무드 램프', icon: '🌈', price: 400000, desc: '대시보드에 은은한 실내 조명 (내비 화면 색과 맞춰져요)' },
   { id: 'vent', name: '1열 통풍·열선 시트', icon: '💺', price: 600000, desc: '택시 손님이 덜 불편해해요 (불편 감점 30% 줄어듦)' },
   { id: 'park', name: '원격 스마트 주차 보조', icon: '🅿️', price: 1300000, desc: '주차 미션 성공 보상 +20%' },
-  { id: 'v2l', name: '실내 V2L', icon: '🔌', price: 300000, desc: '전기차 전용 · 차에서 전기를 꺼내 쓰는 콘센트 (꾸밈 옵션)', only: 'ev' },
+  { id: 'v2l', name: '실내 V2L', icon: '🔌', price: 300000, desc: '차에서 전기를 꺼내 쓰는 콘센트 (전기차가 아니면 보조 배터리로 · 꾸밈 옵션)' },
 ];
-export const optFits = (o, v) => !o.only || (o.only === 'ev' ? !!(v && (v.ev || (v.kinds || []).includes('ev'))) : true);
+export const optFits = () => true; // 모든 차에서 모든 옵션을 고를 수 있어요
 export const OPT_BY_ID = Object.fromEntries(OPTIONS.map((o) => [o.id, o]));
 // 트림이 높을수록 기본 포함 옵션이 늘어나요 (게임용 단순화)
 export function trimStd(v, ti) {
@@ -198,6 +210,12 @@ const TRIM_GEN = ['베이직', '스탠다드', '프리미엄', '익스클루시�
 const STORE_NAMES = { hb_casper: '카스토', hb_caspere: '카스토 E', hb_ionix5: '루미온 5', hb_ionix6: '루미온 6', hb_ionix9: '루미온 9', hb_staria: '스텔라 밴', sr_niro: '니코 하이브리드', sr_ev4: 'SE4',
   bm_2at: 'B2 투어러', bm_4: 'B4 쿠페', bm_i5: 'Bi5', bm_8: 'B8 GT', bm_x1: 'BX1', bm_ix1: 'BiX1', bm_x2: 'BX2', bm_ix3: 'BiX3', bm_x6: 'BX6',
   bm_xm: 'BXR', bm_z4: 'BZ 로드스터', bm_x7: 'BX7', bm_ix: 'BiX', bm_m240: 'B2 퍼포먼스 쿠페' };
+// 트림 표가 없는 차도 트림 · 옵션을 고를 수 있게 (기본 3단계 자동 생성)
+for (const c of CARS) {
+  if (TRIMS[c.id]) continue;
+  const k = c.ev ? 'ev' : 'gas', r = (x) => Math.round(c.price * x / 10000) * 10000;
+  TRIMS[c.id] = T(c.name, '', [P(c.ev ? '전기' : '가솔린', k, [['베이직', c.price], ['프리미엄', r(1.1)], ['시그니처', r(1.22)]])]);
+}
 for (const c of CARS) {
   if (STORE) { c.ref = ''; if (STORE_NAMES[c.id]) c.name = STORE_NAMES[c.id]; }
   const t = TRIMS[c.id]; if (!t) continue;
@@ -215,8 +233,8 @@ for (const c of CARS) {
 export const trimKind = (spec, ti) => spec?.trims?.[ti || 0]?.kind || (spec?.ev ? 'ev' : 'gas');
 
 // style: hb(사진 같은 둥근 앞모습) km nd country
-const B = (id, brand, name, ref, cls, style, low, ev, cng, price, len, wid, hei, wb, mass, hp, vmax, acc, turnR, livery) =>
-  ({ id, brand, name, ref, cls, style, low, ev, cng, price, len, wid, hei, wb, mass, hp, vmax, acc, turnR, livery, type: 'bus' });
+const B = (id, brand, name, ref, cls, style, low, ev, cng, price, len, wid, hei, wb, mass, hp, vmax, acc, turnR, livery, extra = {}) =>
+  ({ id, brand, name, ref, cls, style, low, ev, cng, price, len, wid, hei, wb, mass, hp, vmax, acc, turnR, livery, type: 'bus', ...extra });
 
 export const BUSES = [
   B('hb_ecity_low', 'hanbitbus', 'E-시티 저상 (전기)', '일렉시티 저상급', '저상 전기 시내버스', 'hb', true, true, false, 450000000, 10.99, 2.49, 3.32, 5.85, 12500, 322, 85, 17, 10.2, 'teal'),
@@ -228,6 +246,14 @@ export const BUSES = [
   B('km_high', 'kmobil', '스마트시티 고상', 'KGM 고상버스급', '고상 시내버스', 'km', false, false, false, 250000000, 11.0, 2.49, 3.38, 5.9, 11400, 300, 95, 18, 10.4, 'yellow'),
   B('nd_low', 'nord', '시티라인 저상', 'MAN 저상버스급', '저상 수입 시내버스', 'nd', true, false, false, 400000000, 12.0, 2.55, 3.1, 5.88, 12600, 330, 85, 18, 10.6, 'sky'),
   B('nd_high', 'nord', '시티라인 고상', 'MAN 고상버스급', '고상 광역버스', 'nd', false, false, false, 350000000, 12.0, 2.55, 3.45, 6.0, 12800, 360, 100, 17, 10.8, 'red'),
+  // ---- 새 버스 ----
+  B('hb_h2_low', 'hanbitbus', 'H-시티 저상 (수소)', '수소전기 저상버스급', '저상 수소전기 시내버스', 'hb', true, true, false, 620000000, 11.0, 2.49, 3.42, 5.85, 13300, 241, 85, 18, 10.2, 'blue', { h2: true }),
+  B('hb_double', 'hanbitbus', '스카이 더블 (2층 전기)', '2층 전기버스급', '2층 저상 광역버스', 'dd', true, true, false, 900000000, 12.99, 2.49, 3.99, 7.3, 18500, 469, 90, 22, 12.0, 'red', { dd: true }),
+  B('hb_coach', 'hanbitbus', '에어로 코치 (공항 리무진)', '고속·공항버스급', '공항 리무진 · 고속버스', 'coach', false, false, false, 310000000, 12.5, 2.49, 3.55, 6.15, 13500, 425, 110, 16, 11.0, 'sky', { coach: true }),
+  B('km_coach', 'kmobil', '로드스타 (시외 우등)', '시외·우등버스급', '시외 우등버스', 'coach', false, false, false, 280000000, 12.0, 2.49, 3.5, 6.1, 13000, 410, 110, 17, 10.9, 'orange', { coach: true }),
+  B('km_ev_low', 'kmobil', '스마트시티 E 저상 (전기)', 'KGM 전기 저상버스급', '저상 전기 시내버스', 'km', true, true, false, 430000000, 11.0, 2.49, 3.3, 5.9, 12400, 335, 85, 17, 10.4, 'green'),
+  B('nd_ev_low', 'nord', '시티라인 E 저상 (전기)', '수입 전기 저상버스급', '저상 수입 전기버스', 'nd', true, true, false, 520000000, 12.0, 2.55, 3.3, 5.88, 13000, 360, 85, 17, 10.6, 'teal'),
+  B('hb_country_e', 'hanbitbus', '컨트리 E (중형 전기)', '중형 전기버스급', '중형 전기 마을버스', 'country', false, true, false, 160000000, 7.7, 2.07, 2.8, 4.3, 6300, 180, 90, 15, 7.3, 'yellow'),
 ];
 if (STORE) for (const b of BUSES) b.ref = '';
 
@@ -268,11 +294,11 @@ export const LIVERY_BY_ID = Object.fromEntries(LIVERIES.map((l) => [l.id, l]));
 // ===== 버스 유형 (게임 속 광주 버스 체계: 급행 · 간선 · 지선 · 마을 · 좌석) =====
 // models: 이 유형 노선에 투입되는 차종 / stopEvery: 정류장 간격(급행은 건너뜀)
 export const BUS_TYPES = {
-  express: { ko: '급행', color: '#d8383a', livery: 'red', models: ['hb_super_high', 'km_high', 'hb_ecity_high'], fare: 1500, stopEvery: 2, interval: 15, desc: '주요 거점만 서는 빠른 노선 · 고상버스' },
-  trunk: { ko: '간선', color: '#2a63d4', livery: 'blue', models: ['hb_ecity_low', 'hb_super_low', 'nd_low', 'km_low'], fare: 1250, stopEvery: 1, interval: 10, desc: '생활권과 도심을 잇는 큰 길 노선 · 대형 저상버스' },
-  branch: { ko: '지선', color: '#4bb048', livery: 'green', models: ['hb_ecity_low', 'km_low', 'hb_super_low'], fare: 1250, stopEvery: 1, interval: 12, desc: '동네 안쪽까지 들어가는 노선 · 저상버스' },
-  village: { ko: '마을', color: '#e0a800', livery: 'yellow', models: ['hb_country'], fare: 1000, stopEvery: 1, interval: 15, desc: '아파트·골목을 도는 짧은 순환 · 중형버스' },
-  seat: { ko: '직행', color: '#8a5cc6', livery: 'purple', models: ['nd_high', 'hb_super_high'], fare: 2000, stopEvery: 2, interval: 20, desc: '인접 시·군 방면 직행 · 고속도로 경유 (2026년 10월 개편: 좌석 → 직행)' },
+  express: { ko: '급행', color: '#d8383a', livery: 'red', models: ['hb_super_high', 'km_high', 'hb_ecity_high', 'hb_double'], fare: 1500, stopEvery: 2, interval: 15, desc: '주요 거점만 서는 빠른 노선 · 고상버스' },
+  trunk: { ko: '간선', color: '#2a63d4', livery: 'blue', models: ['hb_ecity_low', 'hb_super_low', 'nd_low', 'km_low', 'hb_h2_low', 'nd_ev_low'], fare: 1250, stopEvery: 1, interval: 10, desc: '생활권과 도심을 잇는 큰 길 노선 · 대형 저상버스' },
+  branch: { ko: '지선', color: '#4bb048', livery: 'green', models: ['hb_ecity_low', 'km_low', 'hb_super_low', 'km_ev_low'], fare: 1250, stopEvery: 1, interval: 12, desc: '동네 안쪽까지 들어가는 노선 · 저상버스' },
+  village: { ko: '마을', color: '#e0a800', livery: 'yellow', models: ['hb_country', 'hb_country_e'], fare: 1000, stopEvery: 1, interval: 15, desc: '아파트·골목을 도는 짧은 순환 · 중형버스' },
+  seat: { ko: '직행', color: '#8a5cc6', livery: 'purple', models: ['nd_high', 'hb_super_high', 'hb_double', 'hb_coach', 'km_coach'], fare: 2000, stopEvery: 2, interval: 20, desc: '인접 시·군 방면 직행 · 고속도로 경유 (2026년 10월 개편: 좌석 → 직행)' },
 };
 export const ROUTE_COLORS = { express: '#d8383a', trunk: '#2a63d4', branch: '#4bb048', village: '#e0a800', seat: '#8a5cc6', blue: '#2a63d4', green: '#4bb048', yellow: '#e0a800', red: '#d8383a', purple: '#8a5cc6' };
 

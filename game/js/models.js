@@ -521,6 +521,7 @@ const PROFILES = {
   suv_l: { wb: 0.6, hood: 0.58, trunk: 0.63, low: [[0, 0], [0, 0.6], [0.02, 0.63], [0.83, 0.63], [0.98, 0.58], [1, 0.4], [1, 0]], cab: [[0.035, 0.63], [0.06, 0.97], [0.71, 0.98], [0.85, 0.63]] },
   mpv: { wb: 0.6, hood: 0.52, trunk: 0.6, low: [[0, 0], [0, 0.58], [0.02, 0.6], [0.86, 0.6], [0.99, 0.52], [1, 0.38], [1, 0]], cab: [[0.02, 0.6], [0.04, 0.97], [0.74, 0.98], [0.88, 0.6]] },
   boxy: { wb: 0.7, hood: 0.52, trunk: 0.6, low: [[0, 0], [0, 0.58], [0.02, 0.6], [0.88, 0.6], [0.99, 0.52], [1, 0.38], [1, 0]], cab: [[0.02, 0.6], [0.03, 0.98], [0.8, 0.98], [0.9, 0.6]] },
+  pickup: { wb: 0.62, hood: 0.6, trunk: 0.62, bed: 0.4, low: [[0, 0], [0, 0.58], [0.01, 0.62], [0.72, 0.62], [0.97, 0.58], [1, 0.42], [1, 0]], cab: [[0.4, 0.62], [0.42, 0.97], [0.66, 0.98], [0.79, 0.62]] },
   gwagon: { wb: 0.59, hood: 0.58, trunk: 0.6, low: [[0, 0], [0, 0.58], [0.02, 0.6], [0.82, 0.6], [0.99, 0.58], [1, 0.3], [1, 0]], cab: [[0.06, 0.6], [0.07, 0.98], [0.74, 0.98], [0.78, 0.6]] },
 };
 
@@ -614,6 +615,19 @@ export function buildCar(spec, opts = {}) {
       for (const dz of doorZs) M.add(GEO.box, MAT.black, mx(s * (W / 2 + 0.004), (yb + 0.2 + belt) / 2, dz, 0, 0, 0, 0.008, belt - yb - 0.25, 0.012));
       for (const dz of [bzz + 0.35, bzz - 0.5]) M.add(GEO.box, MAT.chrome, mx(s * (W / 2 + 0.012), belt - 0.15, dz, 0, 0, 0, 0.025, 0.035, 0.2));
       for (const za of [zF, zR]) M.add(new THREE.TorusGeometry(ar - 0.01, 0.035, 5, 18, Math.PI - 2 * a0), MAT.black, mx(s * (W / 2 - 0.03), cy, za, 0, Math.PI / 2, a0));
+    }
+  }
+  // 픽업 짐칸: 옆 벽 · 뒷문 · 검은 바닥 라이너 · 롤바
+  if (P.bed) {
+    const bz0 = -L / 2 + 0.06, bz1 = toX(P.bed) - 0.04, by = 0.62 * H, bl = bz1 - bz0;
+    M.add(GEO.box, MAT.black, mx(0, by + 0.005, (bz0 + bz1) / 2, 0, 0, 0, W - 0.34, 0.02, bl - 0.1));
+    for (const s of [1, -1]) M.add(GEO.box, paint, mx(s * (W / 2 - 0.1), by + 0.14, (bz0 + bz1) / 2, 0, 0, 0, 0.12, 0.28, bl));
+    M.add(GEO.box, paint, mx(0, by + 0.14, bz0 + 0.04, 0, 0, 0, W - 0.2, 0.28, 0.08));
+    M.add(GEO.box, paint, mx(0, by + 0.14, bz1 - 0.02, 0, 0, 0, W - 0.2, 0.28, 0.06));
+    if (!lod) {
+      for (const s of [1, -1]) M.add(GEO.box, MAT.trim, mx(s * (W / 2 - 0.16), by + 0.42, bz1 - 0.15, 0, 0, 0, 0.06, 0.32, 0.06));
+      M.add(GEO.box, MAT.trim, mx(0, by + 0.58, bz1 - 0.15, 0, 0, 0, W - 0.3, 0.06, 0.06));
+      M.add(GEO.box, MAT.chrome, mx(0, by + 0.1, bz0 - 0.01, 0, 0, 0, 0.3, 0.04, 0.01));
     }
   }
   // 그릴
@@ -812,26 +826,29 @@ let adSeed = 0;
 export function buildBus(spec, opts = {}) {
   const L = spec.len, W = spec.wid, H = spec.hei, low = spec.low, lod = !!opts.lod;
   const country = spec.style === 'country';
+  const coach = !!spec.coach, dd = !!spec.dd; // 고속·공항 리무진 / 2층 버스
+  const DK0 = 2.1, DK1 = 2.42; // 2층 버스: 1층 창 위 · 2층 창 아래
   const liv = LIVERY_BY_ID[opts.livery || spec.livery] || LIVERY_BY_ID.teal;
   const group = new THREE.Group();
   const body = new THREE.Group();
   group.add(body);
   const obj = { group, body, wheels: [], spec, isBus: true, doors: [], wipers: [], mirrors: [] };
-  const floorY = low ? 0.36 : country ? 0.75 : 0.98;
+  const floorY = low ? 0.36 : country ? 0.75 : coach ? 1.25 : 0.98;
   const skirt = 0.3, topY = H - 0.32, roofY = topY;
   const r = country ? 0.4 : 0.5;
-  const fo = country ? 1.45 : 2.55;
+  const fo = country ? 1.45 : coach ? 2.45 : 2.55;
   const zF = L / 2 - fo, zR = zF - spec.wb;
   const crF = country ? 0.3 : 0.36, crR = 0.26;
   const doorW = country ? 0.85 : 1.2;
   const d0 = crF + 0.06;
   const fdC = L / 2 - d0 - doorW / 2;
-  const mdC = country ? null : zR + 1.85;
+  const mdC = country || coach ? null : zR + 1.85;
   const wTop = topY - 0.1;
-  const wBot = low ? 1.12 : country ? 1.25 : 1.55;
-  const wsBot = country ? 1.15 : spec.style === 'nd' ? 0.95 : 1.02;
+  const wBot = low ? 1.12 : country ? 1.25 : coach ? 1.72 : 1.55;
+  const wsBot = country ? 1.15 : coach ? 1.42 : spec.style === 'nd' ? 0.95 : 1.02;
   const M = new Merger();
   const pxm = 80;
+  const dFloor = coach ? floorY - 0.5 : floorY; // 우등·리무진: 운전석은 객석보다 낮아요
   const sideL = L - crF - crR, sideZ = (crR - crF) / 2;
 
   // ---- 옆면 데칼 (유리창/문/휠하우스는 투명) ----
@@ -856,20 +873,36 @@ export function buildBus(spec, opts = {}) {
       cut(g, ...rect(d + 0.03, d + seg - 0.03, raised ? wBot + 0.22 : wBot, wTop - 0.04), 6, 'rgba(10,16,20,0.62)');
       d += seg;
     }
+    if (dd) { // 2층 버스: 1층 창과 2층 창 사이 차체 띠
+      g.fillStyle = liv.mid; g.fillRect(0, Y(DK1), cw, Y(DK0) - Y(DK1));
+      g.fillStyle = liv.top; g.fillRect(0, Y(DK0 + 0.1), cw, Y(DK0) - Y(DK0 + 0.1));
+    }
+    if (coach) { // 짐칸 문 (바퀴 사이)
+      const b0 = fo + r + 0.35, b1 = L / 2 - zR - r - 0.35, n = 3, bw = (b1 - b0) / n;
+      g.strokeStyle = 'rgba(0,0,0,.38)'; g.lineWidth = 3;
+      for (let i = 0; i < n; i++) {
+        const [rx, ry, rw, rh] = rect(b0 + i * bw + 0.04, b0 + (i + 1) * bw - 0.04, 0.4, wBot - 0.3);
+        roundRect(g, rx, ry, rw, rh, 8); g.stroke();
+        g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(rx + rw / 2 - 18, ry + rh - 16, 36, 5);
+      }
+    }
     if (!isRight) { g.fillStyle = '#111417'; g.fillRect(...rect(crF, 1.62, wBot - 0.32, wTop)); cut(g, ...rect(crF + 0.02, 1.56, wBot - 0.3, wTop - 0.04), 8, 'rgba(10,16,20,0.55)'); }
     if (isRight) {
-      cut(g, ...rect(d0, d0 + doorW, skirt - 0.05, wTop + 0.02), 4, null);
-      if (mdC !== null) { const dm = L / 2 - mdC; cut(g, ...rect(dm - doorW / 2, dm + doorW / 2, skirt - 0.05, wTop + 0.02), 4, null); }
+      const dTop = dd ? DK0 : wTop + 0.02;
+      cut(g, ...rect(d0, d0 + doorW, skirt - 0.05, dTop), 4, null);
+      if (mdC !== null) { const dm = L / 2 - mdC; cut(g, ...rect(dm - doorW / 2, dm + doorW / 2, skirt - 0.05, dTop), 4, null); }
     }
     g.fillStyle = liv.text; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.font = `800 ${Math.round(0.18 * pxm)}px "Noto Sans KR", sans-serif`;
-    if (!country) g.fillText(opts.company || '광주 시내버스', X(L * 0.42), Y(0.8));
+    if (coach) g.fillText(liv.id === 'sky' ? '공항 리무진  AIRPORT LIMOUSINE' : '시외 우등  PREMIUM EXPRESS', X(L * 0.5), Y(wBot - 0.16));
+    else if (!country) g.fillText(opts.company || '광주 시내버스', X(L * 0.42), Y(0.8));
     g.font = `700 ${Math.round(0.13 * pxm)}px "Noto Sans KR", sans-serif`;
-    if (spec.ev) g.fillText('친환경 전기버스  ELECTRIC', X(L * 0.42), Y(0.64));
+    if (spec.h2) g.fillText('수소전기버스  HYDROGEN', X(L * 0.42), Y(0.64));
+    else if (spec.ev) g.fillText('친환경 전기버스  ELECTRIC', X(L * 0.42), Y(0.64));
     else if (spec.cng) g.fillText('CNG 천연가스버스', X(L * 0.42), Y(0.64));
     if (low) { g.fillStyle = '#1a6fd1'; g.font = `800 ${Math.round(0.15 * pxm)}px sans-serif`; g.fillText('♿ 저상버스', X(L * 0.42), Y(0.95)); }
     // 📢 버스 광고 랩핑 (관리자 모드 '광고 랩핑' 투자를 하면 버스 옆에 광고가 붙어요)
-    if (globalThis.__RK_ADS && !country && !lod) {
+    if (globalThis.__RK_ADS && !country && !coach && !lod) {
       const AD = BUS_ADS[(adSeed = (adSeed + 1) % BUS_ADS.length)];
       const a0 = isRight ? d0 + doorW + 0.25 : L * 0.5, a1 = isRight ? (mdC !== null ? L / 2 - mdC - doorW / 2 - 0.25 : L * 0.55) : L * 0.86;
       if (a1 - a0 > 1.4) {
@@ -909,12 +942,17 @@ export function buildBus(spec, opts = {}) {
     g.fillStyle = '#111417'; roundRect(g, gx0 - 6, Y(H - 0.6) - 4, gx1 - gx0 + 12, Y(wsBot - 0.04) - Y(H - 0.6) + 8, 26); g.fill();
     cut(g, gx0, Y(H - 0.6), gx1 - gx0, Y(wsBot) - Y(H - 0.6), country ? 40 : 26, 'rgba(12,20,26,0.5)');
     if (spec.style === 'km') { g.fillStyle = '#15171a'; g.fillRect(cw / 2 - 4, Y(H - 0.6), 8, Y(wsBot) - Y(H - 0.6)); }
+    if (dd) { g.fillStyle = liv.top; g.fillRect(0, Y(DK1), cw, Y(DK0) - Y(DK1)); g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(0, Y(DK0 + 0.04), cw, 3); }
     g.fillStyle = '#121416'; g.fillRect(S(k.tot * 0.1), Y(wsBot), S(k.tot * 0.8), Y(wsBot - 0.16) - Y(wsBot));
     g.fillStyle = '#cfd5da'; roundRect(g, cw / 2 - 0.35 * 128, Y(wsBot - 0.06), 0.7 * 128, 0.04 * 128, 3); g.fill();
     g.fillStyle = '#15171a';
-    for (const side of [-1, 1]) {
+    if (spec.style === 'km' || spec.style === 'nd') for (const side of [-1, 1]) {
       const xa = side < 0 ? S(0) : S(k.tot), xb = X(side * (W / 2 - 0.62));
       g.beginPath(); g.moveTo(xa, Y(0.98)); g.quadraticCurveTo((xa + xb) / 2, Y(1.02), xb, Y(0.9)); g.lineTo(xb, Y(0.72)); g.quadraticCurveTo((xa + xb) / 2, Y(0.66), xa, Y(0.7)); g.closePath(); g.fill();
+    }
+    if (spec.style === 'hb' || coach) { // 앞유리 아래: 차체색 판 + 노선색 V자 장식
+      g.fillStyle = liv.top;
+      g.beginPath(); g.moveTo(0, Y(wsBot - 0.2)); g.quadraticCurveTo(cw / 2, Y(wsBot - 0.42), cw, Y(wsBot - 0.2)); g.lineTo(cw, Y(wsBot - 0.27)); g.quadraticCurveTo(cw / 2, Y(wsBot - 0.5), 0, Y(wsBot - 0.27)); g.closePath(); g.fill();
     }
     g.fillStyle = liv.low; g.fillRect(0, Y(0.5), cw, ch);
     // 색 띠: 앞판 아래를 가로지르는 곡선 (노선 색)
@@ -931,7 +969,7 @@ export function buildBus(spec, opts = {}) {
     g.fillStyle = '#16191c'; roundRect(g, cw / 2 - gw / 2, gy, gw, 0.24 * 128, 10); g.fill();
     g.fillStyle = '#2c3136'; for (let i = 0; i < 4; i++) g.fillRect(cw / 2 - gw / 2 + 10, gy + 6 + i * 7, gw - 20, 3);
     // 엠블럼 (가상 브랜드 첫 글자)
-    const em = spec.style === 'km' ? 'K' : spec.style === 'nd' ? 'N' : 'H';
+    const em = spec.brand === 'kmobil' ? 'K' : spec.brand === 'nord' ? 'N' : 'H';
     g.fillStyle = '#d9dee3'; g.beginPath(); g.arc(cw / 2, Y(hlY), 0.085 * 128, 0, Math.PI * 2); g.fill();
     g.fillStyle = '#2a2f35'; g.font = `900 ${Math.round(0.11 * 128)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(em, cw / 2, Y(hlY) + 1);
     // 범퍼 아래 검은 립 + 견인 고리 덮개
@@ -1026,12 +1064,14 @@ export function buildBus(spec, opts = {}) {
   }
 
   // ---- 실내 ----
+  const ceilY = dd ? DK0 : roofY;
   obj.seatSpots = [];
   const seat = (x, z, base, mat, rot = 0) => {
     if (!lod && Math.abs(rot) < 0.01 && base < floorY + 0.5) obj.seatSpots.push({ x, y: base + 0.49, z: z + 0.02, used: false });
     M.add(GEO.box, mat, mx(x, base + 0.44, z, 0, rot, 0, 0.42, 0.1, 0.42));
     const bx = x - Math.sin(rot) * 0.2, bz = z - Math.cos(rot) * 0.2;
     M.add(GEO.box, mat, mx(bx, base + 0.76, bz, -0.12, rot, 0, 0.42, 0.56, 0.08));
+    if (coach) M.add(GEO.box, mat, mx(bx - Math.sin(rot) * 0.03, base + 1.14, bz - Math.cos(rot) * 0.03, -0.12, rot, 0, 0.36, 0.24, 0.1)); // 우등 머리받침
     M.add(GEO.box, MAT.trim, mx(x, base + 0.2, z, 0, rot, 0, 0.08, 0.4, 0.08));
   };
   obj.floorAt = (z) => (low && z < platZ ? floorY + 0.36 : floorY);
@@ -1055,31 +1095,50 @@ export function buildBus(spec, opts = {}) {
       count++;
     }
     for (let i = 0; i < 5; i++) seat(-W / 2 + 0.35 + i * ((W - 0.7) / 4), -L / 2 + 0.5, baseAt(-L / 2 + 0.5), MAT.seatBlue);
+    if (!coach) {
     // 기둥/손잡이
-    const pole = (x, z, y0) => M.add(GEO.cyl8, MAT.pole, mx(x, (y0 + roofY) / 2, z, 0, 0, 0, 0.022, roofY - y0, 0.022));
+    const pole = (x, z, y0) => M.add(GEO.cyl8, MAT.pole, mx(x, (y0 + ceilY) / 2, z, 0, 0, 0, 0.022, ceilY - y0, 0.022));
     pole(-W / 2 + 1.0, fdC - doorW / 2 - 0.1, floorY); pole(-0.25, fdC - 0.2, floorY);
     if (mdC !== null) { pole(-W / 2 + 0.95, mdC + doorW / 2 + 0.05, floorY); pole(-W / 2 + 0.95, mdC - doorW / 2 - 0.05, floorY); }
     for (let z = L / 2 - 3; z > -L / 2 + 1.5; z -= 2.4) { pole(0.45, z, baseAt(z)); }
-    for (const x of [0.5, -0.5]) M.add(GEO.cyl8, MAT.pole, mx(x, roofY - 0.28, -0.3, Math.PI / 2, 0, 0, 0.02, L - 3.4, 0.02));
+    for (const x of [0.5, -0.5]) M.add(GEO.cyl8, MAT.pole, mx(x, ceilY - 0.28, -0.3, Math.PI / 2, 0, 0, 0.02, L - 3.4, 0.02));
     // 손잡이 끈 (천장 봉에 매달린 삼각 손잡이)
     for (const x of [0.5, -0.5]) for (let z = L / 2 - 2.2; z > -L / 2 + 1.6; z -= 0.42) {
-      M.add(GEO.box, MAT.strap, mx(x, roofY - 0.4, z, 0, 0, 0, 0.035, 0.22, 0.012));
-      M.add(GEO.box, MAT.handle, mx(x, roofY - 0.53, z, 0, 0, 0, 0.1, 0.02, 0.025));
-      M.add(GEO.box, MAT.handle, mx(x - 0.032, roofY - 0.49, z, 0, 0, -0.55, 0.018, 0.085, 0.025));
-      M.add(GEO.box, MAT.handle, mx(x + 0.032, roofY - 0.49, z, 0, 0, 0.55, 0.018, 0.085, 0.025));
+      M.add(GEO.box, MAT.strap, mx(x, ceilY - 0.4, z, 0, 0, 0, 0.035, 0.22, 0.012));
+      M.add(GEO.box, MAT.handle, mx(x, ceilY - 0.53, z, 0, 0, 0, 0.1, 0.02, 0.025));
+      M.add(GEO.box, MAT.handle, mx(x - 0.032, ceilY - 0.49, z, 0, 0, -0.55, 0.018, 0.085, 0.025));
+      M.add(GEO.box, MAT.handle, mx(x + 0.032, ceilY - 0.49, z, 0, 0, 0.55, 0.018, 0.085, 0.025));
     }
     // 하차벨 (STOP): 세로 봉마다 + 창가 벽마다
     const bell = (x, y, z, ry) => { M.add(GEO.cyl8, MAT.bell, mx(x, y, z, Math.PI / 2, ry, 0, 0.07, 0.04, 0.07)); M.add(GEO.box, MAT.handle, mx(x, y, z, 0, ry, 0, 0.05, 0.05, 0.05)); };
     for (let z = L / 2 - 3; z > -L / 2 + 1.5; z -= 2.4) bell(0.45, baseAt(z) + 1.35, z + 0.03, 0);
     for (let z = L / 2 - 2.6; z > -L / 2 + 1.5; z -= 1.6) bell(-W / 2 + 0.07, baseAt(z) + 1.15, z, Math.PI / 2);
     if (mdC !== null) bell(-W / 2 + 0.95, floorY + 1.35, mdC + doorW / 2 + 0.08, 0);
+    }
     // 천장 + 조명
-    M.add(GEO.box, MAT.busCeil, mx(0, roofY - 0.02, 0, 0, 0, 0, W - 0.1, 0.03, L - 0.12));
-    for (const x of [0.75, -0.75]) M.add(GEO.box, MAT.cabinLight, mx(x, roofY - 0.05, -0.2, 0, 0, 0, 0.12, 0.03, L - 3));
+    if (!dd) {
+    M.add(GEO.box, MAT.busCeil, mx(0, ceilY - 0.02, 0, 0, 0, 0, W - 0.1, 0.03, L - 0.12));
+    for (const x of [0.75, -0.75]) M.add(GEO.box, MAT.cabinLight, mx(x, ceilY - 0.05, -0.2, 0, 0, 0, 0.12, 0.03, L - 3));
+    }
+    // 2층 버스: 2층 바닥 · 좌석 · 천장 (앞쪽 계단 구멍은 비워 둠)
+    if (dd) {
+      const uz0 = -L / 2 + 0.1, uz1 = L / 2 - 1.9, hole = [fdC - doorW / 2 - 1.3, fdC - doorW / 2 - 0.1];
+      M.add(GEO.box, MAT.busFloor, mx(0, DK0 + 0.04, (uz0 + hole[0]) / 2, 0, 0, 0, W - 0.08, 0.1, hole[0] - uz0));
+      M.add(GEO.box, MAT.busFloor, mx(0, DK0 + 0.04, (hole[1] + uz1) / 2, 0, 0, 0, W - 0.08, 0.1, uz1 - hole[1]));
+      M.add(GEO.box, MAT.busFloor, mx(W / 2 - 0.5, DK0 + 0.04, (hole[0] + hole[1]) / 2, 0, 0, 0, 0.9, 0.1, hole[1] - hole[0]));
+      for (let k = 0; k < 6; k++) M.add(GEO.box, MAT.busFloor, mx(-W / 2 + 0.55, floorY + (k + 0.5) * (DK0 - floorY) / 6, hole[1] - (k + 0.5) * ((hole[1] - hole[0]) / 6), 0, 0, 0, 0.8, 0.06, 0.24));
+      for (let z = L / 2 - 2.3; z > -L / 2 + 0.8; z -= 0.82) {
+        if (z < hole[1] + 0.3 && z > hole[0] - 0.3) continue;
+        for (const x of [W / 2 - 0.32, W / 2 - 0.76, -W / 2 + 0.32, -W / 2 + 0.76]) seat(x, z, DK0 + 0.09, MAT.seatBlue);
+      }
+      M.add(GEO.box, MAT.busCeil, mx(0, roofY - 0.02, 0, 0, 0, 0, W - 0.1, 0.03, L - 0.12));
+      for (const x of [0.75, -0.75]) M.add(GEO.box, MAT.cabinLight, mx(x, roofY - 0.05, -0.2, 0, 0, 0, 0.12, 0.03, L - 3));
+      M.add(GEO.box, MAT.busFloor, mx(0, DK0 + 0.2, L / 2 - 1.88, 0, 0, 0, W - 0.1, 0.4, 0.06)); // 2층 앞 칸막이
+    }
     // 운전석
     const dX = W / 2 - 0.62, dZ = L / 2 - 1.25;
-    seat(dX, dZ, floorY + 0.12, MAT.seat);
-    M.add(GEO.box, MAT.interior, mx(W / 2 - 0.75, floorY + 0.75, L / 2 - 0.45, 0, 0, 0, 1.25, 0.32, 0.6));
+    seat(dX, dZ, dFloor + 0.12, MAT.seat);
+    M.add(GEO.box, MAT.interior, mx(W / 2 - 0.75, dFloor + 0.75, L / 2 - 0.45, 0, 0, 0, 1.25, 0.32, 0.6));
     M.add(GEO.box, MAT.interior, mx(-0.1, floorY + 0.5, L / 2 - 0.35, 0, 0, 0, 1.6, 0.25, 0.35));
     // 운전석 보호 칸막이
     M.add(GEO.box, MAT.glass, mx(W / 2 - 1.08, floorY + 1.0, dZ - 0.1, 0, 0, 0, 0.03, 0.9, 0.9));
@@ -1092,7 +1151,7 @@ export function buildBus(spec, opts = {}) {
       M.add(GEO.box, MAT.screen, mx(-W / 2 + 1.05, floorY + 1.2, mdC + doorW / 2 + 0.02, 0, 0, 0, 0.1, 0.12, 0.01));
     }
     // 하차벨 버튼 (기둥마다 빨간 버튼)
-    for (let z = L / 2 - 3; z > -L / 2 + 1.5; z -= 2.4) M.add(GEO.box, MAT.seatPink, mx(0.45, baseAt(z) + 1.25, z - 0.03, 0, 0, 0, 0.06, 0.08, 0.04));
+    if (!coach) for (let z = L / 2 - 3; z > -L / 2 + 1.5; z -= 2.4) M.add(GEO.box, MAT.seatPink, mx(0.45, baseAt(z) + 1.25, z - 0.03, 0, 0, 0, 0.06, 0.08, 0.04));
   }
 
   // ---- 등화 ----
@@ -1172,7 +1231,14 @@ export function buildBus(spec, opts = {}) {
   };
   mkDoor(fdC);
   if (mdC !== null) mkDoor(mdC);
+  obj.kneel = 0;
   obj.updateDoors = (dt) => {
+    // 저상버스 닐링: 문이 열리면 차체를 문 쪽으로 7cm 낮춰 타기 쉽게
+    if (low) {
+      const want = obj.doors.some((d) => d.target > 0) ? 1 : 0;
+      obj.kneel += clamp(want - obj.kneel, -dt * 1.6, dt * 1.6);
+      body.position.y = -0.07 * obj.kneel;
+    }
     for (const d of obj.doors) {
       d.t += clamp(d.target - d.t, -dt * 1.1, dt * 1.1);
       const t = d.t, out = Math.min(1, t * 3) * 0.1, slide = Math.max(0, (t - 0.2) / 0.8);
@@ -1231,29 +1297,31 @@ export function buildBus(spec, opts = {}) {
     const cockpit = new Merger();
     const dashM = MAT.interior;
     // 앞 유리 아래 대시보드 (차 폭 전체)
-    cockpit.add(GEO.box, dashM, mx(0.05, floorY + 0.98, fz - 0.4, -0.18, 0, 0, W - 0.3, 0.12, 0.42));
-    cockpit.add(GEO.box, dashM, mx(0.05, floorY + 0.6, fz - 0.36, 0, 0, 0, W - 0.3, 0.7, 0.36));
-    // 운전석 계기판 후드 (계기판을 감싸는 갓)
-    cockpit.add(GEO.box, MAT.black, mx(dx, floorY + 1.25, fz - 0.57, 0.42, 0, 0, 1.02, 0.42, 0.03));
-    cockpit.add(GEO.box, dashM, mx(dx, floorY + 1.5, fz - 0.6, -0.1, 0, 0, 1.08, 0.03, 0.08));
-    cockpit.add(GEO.box, dashM, mx(dx + 0.53, floorY + 1.28, fz - 0.6, -0.35, 0, 0, 0.05, 0.44, 0.2));
-    cockpit.add(GEO.box, dashM, mx(dx - 0.53, floorY + 1.28, fz - 0.6, -0.35, 0, 0, 0.05, 0.44, 0.2));
+    cockpit.add(GEO.box, dashM, mx(0.05, dFloor + 0.98, fz - 0.4, -0.18, 0, 0, W - 0.3, 0.12, 0.42));
+    cockpit.add(GEO.box, dashM, mx(0.05, dFloor + 0.6, fz - 0.36, 0, 0, 0, W - 0.3, 0.7, 0.36));
+    // 운전석 계기판 후드 (계기판을 감싸는 갓) — 따로 묶어서, 계기판을 작게 화면에 띄울 땐 숨겨 앞을 넓게
+    const hoodM = new Merger();
+    hoodM.add(GEO.box, MAT.black, mx(dx, dFloor + 1.22, fz - 0.57, 0.42, 0, 0, 0.86, 0.34, 0.03));
+    hoodM.add(GEO.box, dashM, mx(dx, dFloor + 1.42, fz - 0.6, -0.1, 0, 0, 0.9, 0.03, 0.08));
+    hoodM.add(GEO.box, dashM, mx(dx + 0.45, dFloor + 1.24, fz - 0.6, -0.35, 0, 0, 0.05, 0.36, 0.2));
+    hoodM.add(GEO.box, dashM, mx(dx - 0.45, dFloor + 1.24, fz - 0.6, -0.35, 0, 0, 0.05, 0.36, 0.2));
+    const hoodG = new THREE.Group(); hoodM.build(hoodG); body.add(hoodG); obj.dashHood = hoodG;
     // 운전석 오른쪽 스위치 판 (비스듬히)
-    cockpit.add(GEO.box, dashM, mx(dx - 0.78, floorY + 1.0, fz - 0.78, -1.0 + Math.PI / 2, 0.45, 0, 0.5, 0.42, 0.06));
+    cockpit.add(GEO.box, dashM, mx(dx - 0.78, dFloor + 1.0, fz - 0.78, -1.0 + Math.PI / 2, 0.45, 0, 0.5, 0.42, 0.06));
     // 왼쪽 창가 작은 판
-    cockpit.add(GEO.box, dashM, mx(dx + 0.62, floorY + 0.95, fz - 0.9, -0.3, -0.3, 0, 0.22, 0.05, 0.36));
+    cockpit.add(GEO.box, dashM, mx(dx + 0.62, dFloor + 0.95, fz - 0.9, -0.3, -0.3, 0, 0.22, 0.05, 0.36));
     // 요금 단말기 (기둥 + 화면 상자)
-    cockpit.add(GEO.cyl8, MAT.trim, mx(dx - 1.02, floorY + 0.55, fz - 1.18, 0, 0, 0, 0.035, 1.1, 0.035));
-    cockpit.add(GEO.box, MAT.black, mx(dx - 1.02, floorY + 1.16, fz - 1.18, -0.2, 0.6, 0, 0.2, 0.26, 0.12));
+    cockpit.add(GEO.cyl8, MAT.trim, mx(dx - 1.02, dFloor + 0.55, fz - 1.18, 0, 0, 0, 0.035, 1.1, 0.035));
+    cockpit.add(GEO.box, MAT.black, mx(dx - 1.02, dFloor + 1.16, fz - 1.18, -0.2, 0.6, 0, 0.2, 0.26, 0.12));
     // 운전대 기둥 · 운전석 의자 등받이
-    cockpit.add(GEO.box, MAT.black, mx(dx, floorY + 0.75, fz - 0.86, -0.55, 0, 0, 0.14, 0.7, 0.14));
-    cockpit.add(GEO.box, MAT.seat || MAT.black, mx(dx, floorY + 0.95, fz - 1.75, 0.08, 0, 0, 0.52, 0.75, 0.1));
+    cockpit.add(GEO.box, MAT.black, mx(dx, dFloor + 0.75, fz - 0.86, -0.55, 0, 0, 0.14, 0.7, 0.14));
+    cockpit.add(GEO.box, MAT.seat || MAT.black, mx(dx, dFloor + 0.95, fz - 1.75, 0.08, 0, 0, 0.52, 0.75, 0.1));
     cockpit.build(body);
     // 아날로그 계기판
     const dash = makeBusCluster(!!spec.ev);
     const dm = new THREE.Mesh(GEO.plane, dash.mat);
     dm.scale.set(0.98, 0.383, 1);
-    dm.position.set(dx, floorY + 1.25, fz - 0.63);
+    dm.position.set(dx, dFloor + 1.25, fz - 0.63);
     dm.rotation.set(-0.42, Math.PI, 0, 'YXZ');
     body.add(dm);
     obj.dash = dash; obj.dashMesh = dm;
@@ -1267,12 +1335,12 @@ export function buildBus(spec, opts = {}) {
           g.fillStyle = '#dfe4e8'; g.font = '700 20px sans-serif'; g.textAlign = 'center'; g.fillText(n, x + 43, y + 82); });
       });
       const sm = new THREE.Mesh(GEO.plane, new THREE.MeshStandardMaterial({ map: st, roughness: 0.6 }));
-      sm.scale.set(0.46, 0.36, 1); sm.position.set(dx - 0.78, floorY + 1.035, fz - 0.78); sm.rotation.set(-1.0, Math.PI + 0.45, 0, 'YXZ');
+      sm.scale.set(0.46, 0.36, 1); sm.position.set(dx - 0.78, dFloor + 1.035, fz - 0.78); sm.rotation.set(-1.0, Math.PI + 0.45, 0, 'YXZ');
       body.add(sm);
       // 요금 단말기 화면
       const ft = canvasTex(128, 160, (g, w, h) => { g.fillStyle = '#0e2a1a'; g.fillRect(0, 0, w, h); g.fillStyle = '#5dff9a'; g.font = '800 22px sans-serif'; g.textAlign = 'center'; g.fillText('교통카드', 64, 50); g.font = '700 18px sans-serif'; g.fillText('1,250원', 64, 86); g.fillStyle = '#ffd23a'; g.fillText('환승', 64, 120); });
       const fm = new THREE.Mesh(GEO.plane, new THREE.MeshBasicMaterial({ map: ft }));
-      fm.scale.set(0.15, 0.19, 1); fm.position.set(dx - 1.02 + Math.sin(0.6 + Math.PI) * 0.065, floorY + 1.17, fz - 1.18 + Math.cos(0.6 + Math.PI) * 0.065); fm.rotation.set(-0.2, 0.6 + Math.PI, 0, 'YXZ'); body.add(fm);
+      fm.scale.set(0.15, 0.19, 1); fm.position.set(dx - 1.02 + Math.sin(0.6 + Math.PI) * 0.065, dFloor + 1.17, fz - 1.18 + Math.cos(0.6 + Math.PI) * 0.065); fm.rotation.set(-0.2, 0.6 + Math.PI, 0, 'YXZ'); body.add(fm);
     }
     // 운전대: 4스포크 + 큰 허브 (버스는 거의 눕혀진 큰 운전대)
     const sw = new THREE.Group();
@@ -1280,12 +1348,12 @@ export function buildBus(spec, opts = {}) {
     const hub = new THREE.Mesh(GEO.cyl, MAT.trim); hub.scale.set(0.1, 0.05, 0.1); hub.rotation.x = Math.PI / 2; sw.add(hub);
     for (const ang of [Math.PI / 2 + 0.25, -Math.PI / 2 - 0.25, Math.PI + 0.45, Math.PI - 0.45]) { const sp = new THREE.Mesh(GEO.box, MAT.black); sp.scale.set(0.045, 0.2, 0.028); sp.position.set(Math.sin(ang) * 0.13, -Math.cos(ang) * 0.13, 0); sp.rotation.z = -ang; sw.add(sp); }
     const swg = new THREE.Group();
-    swg.position.set(dx, floorY + 1.05, fz - 1.0);
+    swg.position.set(dx, dFloor + 1.05, fz - 1.0);
     swg.rotation.x = -0.95;
     swg.add(sw);
     body.add(swg);
     obj.steeringWheel = sw;
-    obj.defaultPitch = -0.32;
+    obj.defaultPitch = -0.27;
   }
 
   // 번호판
@@ -1314,7 +1382,7 @@ export function buildBus(spec, opts = {}) {
 
   obj.wb = spec.wb;
   obj.floorY = floorY;
-  obj.driverEye = new THREE.Vector3(W / 2 - 0.62, floorY + 1.62, L / 2 - 1.32);
+  obj.driverEye = new THREE.Vector3(W / 2 - 0.62, dFloor + 1.62, L / 2 - 1.32);
   obj.interiorEye = new THREE.Vector3(-0.2, (low ? floorY + 0.36 : floorY) + 1.55, -L / 2 + 1.4);
   obj.doorPos = { front: new THREE.Vector3(-W / 2, 0, fdC), rear: mdC !== null ? new THREE.Vector3(-W / 2, 0, mdC) : null };
   // 멀리 보이는 버스(간이 모델)에도 창 너머로 앉은 승객이 보이게

@@ -588,7 +588,7 @@ function dashOverlay() {
   const on = o && o.dashMesh && o.dash && on0();
   const huOk = o && o.hu && o.huMesh && on0();
   if (huOk) placeOverlay(huHi, o.huMesh, o.hu.canvas); else if (huHi.style.display !== 'none') huHi.style.display = 'none';
-  if (!on) { window.__dashWhy = 'off'; if (G.dashShrunk && o && o.dashMesh) { o.dashMesh.visible = true; G.dashShrunk = false; } if (dashHi.style.display !== 'none') dashHi.style.display = 'none'; return; }
+  if (!on) { window.__dashWhy = 'off'; if (G.dashShrunk && o && o.dashMesh) { o.dashMesh.visible = true; if (o.dashHood) o.dashHood.visible = true; G.dashShrunk = false; } if (dashHi.style.display !== 'none') dashHi.style.display = 'none'; return; }
   const cv = o.dash.tex.userData.canvas;
   if (dashHi.firstChild !== cv) { dashHi.replaceChildren(cv); }
   const m = o.dashMesh; m.updateWorldMatrix(true, false);
@@ -603,16 +603,19 @@ function dashOverlay() {
   cv.style.width = LW + 'px'; cv.style.height = LH + 'px';
   let a = (tr[0] - tl[0]) / LW, b = (tr[1] - tl[1]) / LW, c = (bl[0] - tl[0]) / LH, d = (bl[1] - tl[1]) / LH;
   // 낮은 화면(태블릿 가로): 계기판을 화면 높이 34% 이하로 줄이고 아래 버튼 줄 바로 위에 붙여 앞 도로를 가리지 않게
-  const shortScr = h < 620;
+  // 버스: 계기판이 커서 앞이 가리던 문제 → 화면 크기와 상관없이 높이 24%(낮은 화면 26%) · 너비 40% 이하로
+  const isBusD = P.spec.type === 'bus', shortScr = h < 620 || isBusD;
   if (shortScr) {
-    const Hc = Math.abs(b * LW) + Math.abs(d * LH), maxH = h * 0.34, f = Math.min(1, maxH / Math.max(1, Hc));
+    const Hc = Math.abs(b * LW) + Math.abs(d * LH), Wc = Math.abs(a * LW) + Math.abs(c * LH);
+    const maxH = h * (isBusD ? (h < 620 ? 0.22 : 0.2) : 0.34), maxW = w * (isBusD ? 0.34 : 1);
+    const f = Math.min(1, maxH / Math.max(1, Hc), maxW / Math.max(1, Wc));
     const cbar = document.getElementById('ctrlbar'), cr = cbar && cbar.offsetParent ? cbar.getBoundingClientRect() : null;
     const limit = cr && cr.height ? cr.top - 4 : h - 6;
     const cx = tl[0] + (a * LW + c * LH) / 2, bot = Math.min(tl[1] + b * LW + d * LH, limit);
     a *= f; b *= f; c *= f; d *= f;
     tl[0] = cx - (a * LW + c * LH) / 2; tl[1] = bot - (b * LW + d * LH);
-    m.visible = false; G.dashShrunk = true;
-  } else if (G.dashShrunk) { m.visible = true; G.dashShrunk = false; }
+    m.visible = false; G.dashShrunk = true; if (o.dashHood) o.dashHood.visible = false;
+  } else if (G.dashShrunk) { m.visible = true; G.dashShrunk = false; if (o.dashHood) o.dashHood.visible = true; }
   dashHi.style.transform = `matrix(${a},${b},${c},${d},${tl[0]},${tl[1]})`;
   // 승용차: 운전대 테두리가 계기판 앞을 지나가는 자리는 비워서 3D 운전대가 보이게
   const sw = o.steeringWheel;
@@ -769,7 +772,7 @@ function interact() {
   if (fz && (own.fuel < 99 || (own.dirt || 0) >= 3 || (own.dmg || 0) >= 1)) {
     const cost = Math.round((100 - own.fuel) * (P.spec.type === 'bus' ? 1500 : 800) * (P.spec.ev ? 0.45 : 1));
     G.state = 'pause'; audio.engine({ on: false });
-    serviceMenu({ P, S, fuelCost: cost, refuel: () => { G.refuel = { t: 0 }; toast(`${P.spec.ev ? '⚡ 충전' : '⛽ 주유'} 시작 (-${won(cost)})`, 'money'); }, toast, audio, save: saveSoon, quest })
+    serviceMenu({ P, S, fuelCost: cost, refuel: () => { G.refuel = { t: 0 }; toast(`${P.spec.h2 ? '💧 수소 충전' : P.spec.ev ? '⚡ 충전' : '⛽ 주유'} 시작 (-${won(cost)})`, 'money'); }, toast, audio, save: saveSoon, quest })
       .then(() => { if (G.state === 'pause' && $('#modal').classList.contains('hidden')) G.state = 'play'; });
     return;
   }
@@ -1155,7 +1158,7 @@ const app = {
 };
 
 // 디버그용 (콘솔에서 window.__bitgoeul 로 상태 확인)
-window.__bitgoeul = { app, G, show, hideAll, get showroom() { return showroom; }, get nav() { return nav; }, get traffic() { return traffic; }, interact: () => interact(), enterFoot: () => enterFoot(), action: (c) => action(c), autod, placePlayer: (x, z, h, lv) => placePlayer(x, z, h, lv), get S() { return S; }, get police() { return police; }, get W() { return W; }, get env() { return env; }, get renderer() { return renderer; }, get scene() { return scene; } };
+window.__bitgoeul = { app, G, buildVehicle, BY_ID, show, hideAll, get showroom() { return showroom; }, get nav() { return nav; }, get traffic() { return traffic; }, interact: () => interact(), enterFoot: () => enterFoot(), action: (c) => action(c), autod, placePlayer: (x, z, h, lv) => placePlayer(x, z, h, lv), get S() { return S; }, get police() { return police; }, get W() { return W; }, get env() { return env; }, get renderer() { return renderer; }, get scene() { return scene; } };
 
 // ===================== 메인 루프 =====================
 let last = performance.now();
@@ -1620,7 +1623,7 @@ function syncPlayerModel(dt, blinkOn = false) {
   o.group.rotation.x = P.slope;
   const bump = (P.bumpT > 0 ? Math.sin((0.4 - P.bumpT) * 16) * 0.025 * (P.bumpAmp || 1) : 0) + (G.sinkT ? 0.25 : 0);
   o.body.rotation.x = sim.pitch + bump;
-  o.body.rotation.z = sim.rollA;
+  o.body.rotation.z = sim.rollA + (o.kneel || 0) * 0.02;
   for (const w of o.wheels) {
     w.spin.rotation.x += (sim.vl / w.r) * dt;
     if (w.front) w.pivot.rotation.y = sim.steer;
@@ -1642,7 +1645,7 @@ function syncPlayerModel(dt, blinkOn = false) {
   for (const w of o.wipers) w.rotation.z = P.wiper ? -1.45 + (0.5 - 0.5 * Math.cos(P.wiperPh)) * 1.35 : lerp(w.rotation.z, -1.45, 0.2);
   const dashHiOn = dashHi.style.display === 'block';
   if (o.dash && G.frame % (dashHiOn ? 2 : Q === 'low' ? 10 : 5) === 0) {
-    o.dash.draw({ kmh: sim.kmh, rpm: sim.rpm, gear: P.gearMode !== 'auto' ? P.gearMode : sim.ev ? (sim.gear === 'R' ? 'R' : sim.kmh < 0.5 && G.thrIn < 0.05 ? 'N' : 'D') : sim.gear === 'R' ? 'R' : 'D' + sim.gearN, fuel: P.own.fuel, ev: P.spec.ev, power: G.thrIn, blinkL: bl, blinkR: br, lights: P.lights, park: key('Space') || P.park, doorF: o.doors[0]?.t > 0.05, doorR: o.doors[1]?.t > 0.05, bell: P.bell, brake: G.brkIn || 0, belt: true, limit: G.road && G.road.limit, hour: env.hour, stop: G.mission && G.mission.stop ? G.mission.stop.name : '', cruise: autod.on ? autod.set : 0, retarder: (G.brkIn || 0) > 0.15 && sim.kmh > 8, outTemp: { snow: -3, rain: 14, storm: 15, fog: 12 }[env.weather] ?? (8 + 10 * env.dayF), gap: G.mission && G.mission.gap ? G.mission.gap.info : null, noTex: dashHiOn });
+    o.dash.draw({ kneel: (o.kneel || 0) > 0.3, kmh: sim.kmh, rpm: sim.rpm, gear: P.gearMode !== 'auto' ? P.gearMode : sim.ev ? (sim.gear === 'R' ? 'R' : sim.kmh < 0.5 && G.thrIn < 0.05 ? 'N' : 'D') : sim.gear === 'R' ? 'R' : 'D' + sim.gearN, fuel: P.own.fuel, ev: P.spec.ev, power: G.thrIn, blinkL: bl, blinkR: br, lights: P.lights, park: key('Space') || P.park, doorF: o.doors[0]?.t > 0.05, doorR: o.doors[1]?.t > 0.05, bell: P.bell, brake: G.brkIn || 0, belt: true, limit: G.road && G.road.limit, hour: env.hour, stop: G.mission && G.mission.stop ? G.mission.stop.name : '', cruise: autod.on ? autod.set : 0, retarder: (G.brkIn || 0) > 0.15 && sim.kmh > 8, outTemp: { snow: -3, rain: 14, storm: 15, fog: 12 }[env.weather] ?? (8 + 10 * env.dayF), gap: G.mission && G.mission.gap ? G.mission.gap.info : null, noTex: dashHiOn });
   }
   // 작은 화면: 왼쪽 내비 카드가 미션 카드를 가리면 미션 카드를 내비 카드 오른쪽으로
   if (G.frame % 15 === 7) {
